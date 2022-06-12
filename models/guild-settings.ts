@@ -2,17 +2,31 @@ import * as mongoose from "mongoose";
 
 export interface ISettings extends mongoose.Document {
     _id: string;
-    categoryId: string;
-    logChannelId: string;
-    isEnabled: boolean;
+    isSetup: boolean;
+    channelId: string;
+    roleId: string;
+    roleNameType: "emoji" | "name" | "both";
+    zodiacRoles: [string];
+    birthstoneRoles: [string];
+    allowCreateThread: boolean;
+    allowCeleMessage: boolean;
+    isPremium: boolean;
+    premiumExpiryDate: Date;
 }
 
 export const SettingsSchema = new mongoose.Schema(
     {
         _id: String,
-        categoryId: String,
-        logChannelId: String,
-        isEnabled: Boolean,
+        isSetup: Boolean,
+        channelId: String,
+        roleId: String,
+        roleNameType: String,
+        zodiacRoles: [String],
+        birthstoneRoles: [String],
+        allowCreateThread: Boolean,
+        allowCeleMessage: Boolean,
+        isPremium: Boolean,
+        premiumExpiryDate: Date,
     },
     { versionKey: false }
 );

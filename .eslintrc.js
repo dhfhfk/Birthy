@@ -15,5 +15,6 @@ module.exports = {
         semi: ["warn", "always"],
         "no-unused-vars": "warn",
         "no-var": "error",
+        "@typescript-eslint/no-var-requires": "off",
     },
 };

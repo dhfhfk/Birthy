@@ -1,5 +1,5 @@
 {
-    "name": "d.js-boilerplate",
+    "name": "birthy",
     "version": "1.0.0",
     "description": "",
     "main": "dist/index.js",
@@ -32,6 +32,6 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/dhfhfk/d.js-boilerplate.git"
+        "url": "https://github.com/dhfhfk/Birthy.git"
     }
 }

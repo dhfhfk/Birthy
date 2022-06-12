@@ -2,7 +2,7 @@ import { Client, Intents } from "discord.js";
 import config from "./config";
 
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_INTEGRATIONS, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILD_MESSAGES],
+    intents: [Intents.FLAGS.GUILDS],
 });
 
 // 핸들러 불러오기
