@@ -13,7 +13,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         {
                             title: await t(interaction.locale, "permission_denied"),
                             description: await t(interaction.locale, "you_need_following_permission"),
-                            color: "#da2723",
+                            color: "#f56969",
                             fields: [
                                 {
                                     name: await t(interaction.locale, "required_permission"),

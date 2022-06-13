@@ -111,7 +111,7 @@ module.exports = {
     permissions: ["ADMINISTRATOR"],
 
     run: async (client: Client, interaction: CommandInteraction, locale: string) => {
-        // 길드의 설정 정복 가져오기
+        // 길드의 설정 정보 가져오기
         const settingData = await Settings.findById(interaction.guild.id);
 
         // SUB_COMMAND_GROUP 가져오기
@@ -234,12 +234,12 @@ module.exports = {
                                         fields: [
                                             {
                                                 name: `별자리 역할 무결성 (${String(12 - zodiacErr.length)}/12)`,
-                                                value: zodiacErr.length > 0 ? "몇몇 역할이 존재하지 않는 것 같아요! `/역할 만들기`명령어로 역함을 다시 추가해주세요." : "모두 존재해요.",
+                                                value: zodiacErr.length > 0 ? "몇몇 역할이 존재하지 않는 것 같아요! `/역할 만들기`명령어로 역할을 다시 추가해주세요." : "모두 존재해요.",
                                                 inline: false,
                                             },
                                             {
                                                 name: `탄생석 역할 무결성 (${String(12 - birthstoneErr.length)}/12)`,
-                                                value: birthstoneErr.length > 0 ? "몇몇 역할이 존재하지 않는 것 같아요! `/역할 만들기`명령어로 역함을 다시 추가해주세요." : "모두 존재해요.",
+                                                value: birthstoneErr.length > 0 ? "몇몇 역할이 존재하지 않는 것 같아요! `/역할 만들기`명령어로 역할을 다시 추가해주세요." : "모두 존재해요.",
                                                 inline: false,
                                             },
                                             {
@@ -359,7 +359,7 @@ module.exports = {
                                 embeds: [
                                     {
                                         color: "#f5bed1",
-                                        title: "<:cakeprogress02:985470913938071642> 서버의 멤버들이 생일 축하메시지를 전송하기 위한 개별 채팅 채널(쓰레드)를 만들어드릴까요?",
+                                        title: "<:cakeprogress02:985470913938071642> 서버의 멤버들이 생일 축하메시지를 전송하기 위한 개별 채팅 채널(스레드)을 만들어드릴까요?",
                                         description: "자세한 정보는 아래 이미지를 참조해주세요.",
                                         fields: [
                                             {
@@ -558,7 +558,7 @@ module.exports = {
                                                 inline: false,
                                             },
                                             {
-                                                name: "쓰레드 만들기",
+                                                name: "스레드 만들기",
                                                 value: allowCreateThread ? "예" : "아니오",
                                                 inline: false,
                                             },
