@@ -5,9 +5,9 @@ export interface ISettings extends mongoose.Document {
     isSetup: boolean;
     channelId: string;
     roleId: string;
-    roleNameType: "emoji" | "name" | "both";
-    zodiacRoles: [string];
-    birthstoneRoles: [string];
+    subRole: boolean;
+    zodiacRoles: [{ name: string; _id: string }];
+    birthstoneRoles: [{ name: string; _id: string }];
     allowCreateThread: boolean;
     allowCeleMessage: boolean;
     isPremium: boolean;
@@ -20,9 +20,19 @@ export const SettingsSchema = new mongoose.Schema(
         isSetup: Boolean,
         channelId: String,
         roleId: String,
-        roleNameType: String,
-        zodiacRoles: [String],
-        birthstoneRoles: [String],
+        subRole: Boolean,
+        zodiacRoles: [
+            {
+                name: String,
+                _id: String,
+            },
+        ],
+        birthstoneRoles: [
+            {
+                name: String,
+                _id: String,
+            },
+        ],
         allowCreateThread: Boolean,
         allowCeleMessage: Boolean,
         isPremium: Boolean,

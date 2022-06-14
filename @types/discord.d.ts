@@ -9,6 +9,10 @@ declare module "discord.js" {
         member: CacheTypeReducer<Cached, GuildMember>;
         guild: Guild;
     }
+    interface ContextMenuInteraction {
+        member: CacheTypeReducer<Cached, GuildMember>;
+        guild: Guild;
+    }
     interface VoiceBasedChannel {
         id: string;
     }

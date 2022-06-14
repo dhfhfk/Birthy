@@ -54,6 +54,11 @@ module.exports = {
             description: "[관리자] 기념일을 챙기기 위한 기본 셋업",
             type: "SUB_COMMAND",
         },
+        // {
+        //     name: "공지전송",
+        //     description: "[관리자] 멤버들이 생일을 등록할 수 있도록 공지 메시지를 전송해요.",
+        //     type: "SUB_COMMAND",
+        // },
         {
             name: "채널",
             description: "[관리자]",
@@ -90,19 +95,19 @@ module.exports = {
             description: "[관리자]",
             type: "SUB_COMMAND_GROUP",
             options: [
+                // {
+                //     name: "확인",
+                //     description: "[관리자] 탄생석, 별자리 역할을 확인해요.",
+                //     type: "SUB_COMMAND",
+                // },
                 {
-                    name: "확인",
-                    description: "[관리자] 탄생석, 별자리 역할을 확인해요.",
+                    name: "비활성화",
+                    description: "[관리자] Birth가 등록했던 탄생석, 별자리 역할을 모두 삭제하고 비활성화해요.",
                     type: "SUB_COMMAND",
                 },
                 {
-                    name: "삭제",
-                    description: "[관리자] Birth가 등록했던 탄생석, 별자리 역할을 모두 삭제해요.",
-                    type: "SUB_COMMAND",
-                },
-                {
-                    name: "만들기",
-                    description: "[관리자] 탄생석, 별자리 역할 24개를 만들어요.",
+                    name: "활성화",
+                    description: "[관리자] 탄생석, 별자리 역할기능을 활성화해요.",
                     type: "SUB_COMMAND",
                 },
             ],
@@ -199,13 +204,13 @@ module.exports = {
                         // 역할 확인
                         case "확인": {
                             // 만약 역할 정보가 없다면
-                            if (!settingData || settingData.zodiacRoles.length <= 0) {
+                            if (!settingData) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
                                             color: "#f56969",
-                                            title: "<:xbold:985419129316065320> 역할을 찾을 수 없어요!",
-                                            description: "아직 셋업을 진행하지 않았거나 역할 등록을 취소하셨나봐요.",
+                                            title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
+                                            description: "같이 해결해봐요.",
                                             fields: [
                                                 {
                                                     name: "해결법",
@@ -218,13 +223,32 @@ module.exports = {
                                     ],
                                 });
                             }
+                            if (!settingData.subRole) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: "#f56969",
+                                            title: "<:xbold:985419129316065320> 이미 별자리, 탄생석 기능이 비활성화되어있어요!",
+                                            description: "혹시 활성화시키고 싶으시다면 제가 도와드릴게요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 역할 활성화`명령어로 활성화시킬 수 있어요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
                             const zodiacErr: number[] = [];
                             const birthstoneErr: number[] = [];
                             settingData.zodiacRoles.forEach(async (r, i) => {
-                                if (!interaction.guild.roles.cache?.find((role) => role.id == r)) zodiacErr.push(i);
+                                if (!interaction.guild.roles.cache?.find((role) => role.id == r._id)) zodiacErr.push(i);
                             });
                             settingData.birthstoneRoles.forEach(async (r, i) => {
-                                if (!interaction.guild.roles.cache?.find((role) => role.id == r)) birthstoneErr.push(i);
+                                if (!interaction.guild.roles.cache?.find((role) => role.id == r._id)) birthstoneErr.push(i);
                             });
                             return await interaction.editReply({
                                 embeds: [
@@ -233,13 +257,13 @@ module.exports = {
                                         title: "<:cakeprogress:985470905314603018> 제가 등록했던 역할 정보예요.",
                                         fields: [
                                             {
-                                                name: `별자리 역할 무결성 (${String(12 - zodiacErr.length)}/12)`,
-                                                value: zodiacErr.length > 0 ? "몇몇 역할이 존재하지 않는 것 같아요! `/역할 만들기`명령어로 역할을 다시 추가해주세요." : "모두 존재해요.",
+                                                name: "별자리 역할 무결성",
+                                                value: `${String(12 - zodiacErr.length)}/12`,
                                                 inline: false,
                                             },
                                             {
-                                                name: `탄생석 역할 무결성 (${String(12 - birthstoneErr.length)}/12)`,
-                                                value: birthstoneErr.length > 0 ? "몇몇 역할이 존재하지 않는 것 같아요! `/역할 만들기`명령어로 역할을 다시 추가해주세요." : "모두 존재해요.",
+                                                name: "탄생석 역할 무결성",
+                                                value: `${String(12 - birthstoneErr.length)}/12)`,
                                                 inline: false,
                                             },
                                             {
@@ -253,15 +277,15 @@ module.exports = {
                                 ],
                             });
                         }
-                        case "삭제": {
+                        case "비활성화": {
                             // 만약 역할 정보가 없다면
-                            if (!settingData || settingData.zodiacRoles.length <= 0) {
+                            if (!settingData) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
                                             color: "#f56969",
-                                            title: "<:xbold:985419129316065320> 역할을 찾을 수 없어요!",
-                                            description: "아직 셋업을 진행하지 않았거나 역할 등록을 취소하셨나봐요.",
+                                            title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
+                                            description: "같이 해결해봐요.",
                                             fields: [
                                                 {
                                                     name: "해결법",
@@ -274,18 +298,37 @@ module.exports = {
                                     ],
                                 });
                             }
-                            if (settingData && settingData.zodiacRoles.length > 0) {
+                            if (!settingData.subRole) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: "#f56969",
+                                            title: "<:xbold:985419129316065320> 이미 별자리, 탄생석 기능이 비활성화되어있어요!",
+                                            description: "혹시 활성화시키고 싶으시다면 제가 도와드릴게요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 역할 활성화`명령어로 활성화시킬 수 있어요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            if (settingData) {
                                 settingData.zodiacRoles.forEach(async (r) => {
-                                    await interaction.guild.roles.delete(r, `${interaction.user.username} 유저 요청으로 삭제`);
+                                    await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
                                 });
                                 settingData.birthstoneRoles.forEach(async (r) => {
-                                    await interaction.guild.roles.delete(r, `${interaction.user.username} 유저 요청으로 삭제`);
+                                    await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
                                 });
                                 await Settings.findByIdAndUpdate(
                                     interaction.guildId,
                                     {
                                         _id: interaction.guildId,
-                                        roleNameType: "",
+                                        subRoles: false,
                                         zodiacRoles: [],
                                         birthstoneRoles: [],
                                     },
@@ -296,12 +339,72 @@ module.exports = {
                                         {
                                             color: "#f5bed1",
                                             title: "<:cakeprogress:985470905314603018> 모든 역할을 삭제했어요.",
-                                            description: "이제 탄생석, 별자리 역할 기능을 사용하지 않을 거에요.",
+                                            description: "이제 탄생석, 별자리 역할 기능을 사용하지 않을 거예요.",
                                             footer: { text: interaction.guild.id },
                                         },
                                     ],
                                 });
                             }
+                            return;
+                        }
+                        case "활성화": {
+                            //
+                            if (!settingData) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: "#f56969",
+                                            title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
+                                            description: "같이 해결해봐요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            if (!settingData.subRole) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: "#f56969",
+                                            title: "<:xbold:985419129316065320> 이미 별자리, 탄생석 기능이 활성화되어있어요!",
+                                            description: "혹시 비활성화시키고 싶으시다면 제가 도와드릴게요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 역할 비활성화`명령어로 비활성화시킬 수 있어요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            await Settings.findByIdAndUpdate(
+                                interaction.guildId,
+                                {
+                                    _id: interaction.guildId,
+                                    subRole: true,
+                                },
+                                { upsert: true }
+                            );
+                            return await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: "#f5bed1",
+                                        title: "<:cakeprogress:985470905314603018> 별자리, 탄생석 기능을 활성화했어요.",
+                                        description: "멤버의 선택에 따라 역할을 부여할게요.",
+                                        footer: { text: interaction.guild.id },
+                                    },
+                                ],
+                            });
                         }
                     }
                     return;
@@ -321,7 +424,7 @@ module.exports = {
                     embeds: [
                         {
                             color: "#f5bed1",
-                            title: "<:cakeprogress01:985470908737134692> 모든 생일 알림을 전송할 채팅 채널을 새롭게 만들까요?",
+                            title: "<:cakeprogress00:985470906891632701> 모든 생일 알림을 전송할 채팅 채널을 새롭게 만들까요?",
                             description: "새로운 채널 만들기를 원하지 않는다면 셋업 후 `/생일알림 채널 지정` 명령어를 이용해 이미 있는 채널을 지정해주세요.",
                             fields: [
                                 {
@@ -334,7 +437,7 @@ module.exports = {
                                     value: "채팅 채널을 만들고 그 채널에 생일 알림을 전송할게요.",
                                 },
                             ],
-                            footer: { text: `1/3 진행 중, ${interaction.guildId}` },
+                            footer: { text: `1/4 진행 중, ${interaction.guildId}` },
                         },
                     ],
                     components: [
@@ -359,7 +462,7 @@ module.exports = {
                                 embeds: [
                                     {
                                         color: "#f5bed1",
-                                        title: "<:cakeprogress02:985470913938071642> 서버의 멤버들이 생일 축하메시지를 전송하기 위한 개별 채팅 채널(스레드)을 만들어드릴까요?",
+                                        title: "<:cakeprogress01:985470908737134692> 서버의 멤버들이 생일 축하메시지를 전송하기 위한 개별 채팅 채널(스레드)을 만들어드릴까요?",
                                         description: "자세한 정보는 아래 이미지를 참조해주세요.",
                                         fields: [
                                             {
@@ -369,10 +472,10 @@ module.exports = {
                                             },
                                             {
                                                 name: "네",
-                                                value: "생일인 멤버에게 메시지를 전송할 수 있는 개별 채팅 채널을 만들어요. (다음 날이 되면 자동으로 보관처리될거에요)",
+                                                value: "생일인 멤버에게 메시지를 전송할 수 있는 개별 채팅 채널을 만들어요. (다음 날이 되면 자동으로 보관 처리될거예요)",
                                             },
                                         ],
-                                        footer: { text: `2/3 진행 중, ${interaction.guildId}` },
+                                        footer: { text: `2/4 진행 중, ${interaction.guildId}` },
                                     },
                                 ],
                                 components: [
@@ -399,7 +502,7 @@ module.exports = {
                                 embeds: [
                                     {
                                         color: "#f5bed1",
-                                        title: "<:cakeprogress03:985470915540291624> 멤버 목록에서 생일인 멤버를 따로 확인할 수 있는 역할을 만들어드릴까요?",
+                                        title: "<:cakeprogress02:985470913938071642> 멤버 목록에서 생일인 멤버를 따로 확인할 수 있는 역할을 만들어드릴까요?",
                                         description: "자세한 정보는 아래 이미지를 참조해주세요.",
                                         fields: [
                                             {
@@ -412,7 +515,7 @@ module.exports = {
                                                 value: "역할을 만들고 생일인 멤버에게 역할을 지정해요.",
                                             },
                                         ],
-                                        footer: { text: `3/3 진행 중, ${interaction.guildId}` },
+                                        footer: { text: `3/4 진행 중, ${interaction.guildId}` },
                                     },
                                 ],
                                 components: [
@@ -451,50 +554,47 @@ module.exports = {
                             //     ],
                             // });
 
-                            //? 별자리, 탄생석 역할 기능인데 rateLimit 이슈로 비활성화
-                            // await i.deferUpdate();
-                            // const todayZodiac = getZodiac(new Date());
-                            // await interaction.editReply({
-                            //     embeds: [
-                            //         {
-                            //             color: "#f5bed1",
-                            //             title: "<:cakeprogress03:985470915540291624> 탄생석과 별자리를 역할로 만들고 멤버에게 지정해드릴까요?",
-                            //             description: "자세한 정보는 아래 설명을 참조해주세요.",
-                            //             fields: [
-                            //                 {
-                            //                     name: "아니요",
-                            //                     value: "탄생석 및 별자리 기능을 사용하지 않아요.",
-                            //                     inline: false,
-                            //                 },
-                            //                 {
-                            //                     name: "만들기 - 이모지만",
-                            //                     value: `\`${todayZodiac.emoji}\` 형식`,
-                            //                 },
-                            //                 {
-                            //                     name: "만들기 - 이름만",
-                            //                     value: `\`${todayZodiac.name}\` 형식`,
-                            //                 },
-                            //                 {
-                            //                     name: "만들기 - 이모지+이름",
-                            //                     value: `\`${todayZodiac.emoji} ${todayZodiac.name}\` 형식`,
-                            //                 },
-                            //                 {
-                            //                     name: "**정보**",
-                            //                     value: "탄생석 역할은 이모지를 지원하지 않아요.",
-                            //                 },
-                            //             ],
-                            //             footer: { text: `4/4 진행 중, ${interaction.guildId}` },
-                            //         },
-                            //     ],
-                            //     components: [
-                            //         new MessageActionRow().addComponents(
-                            //             new MessageButton().setCustomId(`${interaction.id}-subrole-false`).setLabel("아니요").setStyle("SECONDARY"),
-                            //             new MessageButton().setCustomId(`${interaction.id}-subrole-true-emoji`).setLabel("만들기 - 이모지만").setStyle("PRIMARY"),
-                            //             new MessageButton().setCustomId(`${interaction.id}-subrole-true-name`).setLabel("만들기 - 이름만").setStyle("PRIMARY"),
-                            //             new MessageButton().setCustomId(`${interaction.id}-subrole-true-both`).setLabel("만들기 - 이모지+이름").setStyle("PRIMARY")
-                            //         ),
-                            //     ],
-                            // });
+                            //? 별자리, 탄생석 역할 기능
+                            await i.deferUpdate();
+                            const todayZodiac = getZodiac(new Date());
+                            await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: "#f5bed1",
+                                        title: "<:cakeprogress03:985470915540291624> 탄생석과 별자리를 역할로 만들고 멤버에게 지정해드릴까요?",
+                                        description: "자세한 정보는 아래 설명을 참조해주세요.",
+                                        fields: [
+                                            {
+                                                name: "아니요",
+                                                value: "탄생석 및 별자리 기능을 사용하지 않아요.",
+                                                inline: false,
+                                            },
+                                            {
+                                                name: "네",
+                                                value: `멤버의 선택에 따라 \`${todayZodiac.emoji} ${todayZodiac.name}\` 같은 역할을 부여할게요.`,
+                                            },
+                                        ],
+                                        footer: { text: `4/4 진행 중, ${interaction.guildId}` },
+                                    },
+                                ],
+                                components: [
+                                    new MessageActionRow().addComponents(
+                                        new MessageButton().setCustomId(`${interaction.id}-subrole-false`).setLabel("아니요").setStyle("SECONDARY"),
+                                        new MessageButton().setCustomId(`${interaction.id}-subrole-true`).setLabel("네").setStyle("PRIMARY")
+                                    ),
+                                ],
+                            });
+                            return;
+                        }
+                        case "subrole": {
+                            await Settings.findByIdAndUpdate(
+                                interaction.guildId,
+                                {
+                                    _id: interaction.guildId,
+                                    subRole: JSON.parse(options[2]),
+                                },
+                                { upsert: true }
+                            );
                             if (createChannel) {
                                 channel = await interaction.guild.channels.create("🎂", {
                                     type: "GUILD_TEXT",
@@ -504,17 +604,23 @@ module.exports = {
                                 await saveChannel(interaction.guild.id, "");
                             }
                             if (createRole) {
+                                // 생일 역할 만들기
+                                if (settingData?.roleId) await interaction.guild.roles.delete(settingData.roleId, "무결성을 위해 삭제");
                                 try {
+                                    // 가능하다면 가장 높은 위치로
                                     role = await interaction.guild.roles.create({
                                         name: "🎂오늘 생일",
                                         position: interaction.guild.roles.highest.position - 1,
+                                        permissions: [],
                                         color: "#f5bed1",
                                         hoist: true,
                                     });
                                 } catch {
+                                    // 높은 위치로 설정 실패 시
                                     if (!role)
                                         role = await interaction.guild.roles.create({
                                             name: "🎂오늘 생일",
+                                            permissions: [],
                                             color: "#f5bed1",
                                             hoist: true,
                                         });
@@ -528,6 +634,7 @@ module.exports = {
                                     { upsert: true }
                                 );
                             } else {
+                                // 생일 역할을 만들지 않음
                                 await Settings.findByIdAndUpdate(
                                     interaction.guildId,
                                     {
@@ -576,97 +683,6 @@ module.exports = {
                             if (role) await interaction.followUp({ ephemeral: true, content: `팁: \`서버 설정\` -> \`역할\`메뉴에서 <@&${role.id}>역할을 가장 위로 끌어올리면 생일인 멤버들을 목록 위에서 확인할 수 있어요.` });
                             if (!channel) await interaction.followUp({ ephemeral: true, content: "꼭 **`/생일알림 채널 지정` 명령어로 채널을 지정해주세요!**" });
                             return;
-                        }
-                        //? 별자리, 탄생석 역할 기능인데 rateLimit 이슈로 비활성화
-                        case "subrole": {
-                            let zodiacRoles;
-                            if (settingData && settingData.zodiacRoles.length > 0) {
-                                settingData.zodiacRoles.forEach(async (r) => {
-                                    await interaction.guild.roles.delete(r, "별자리 역할 무결성을 위해 삭제");
-                                });
-                                settingData.birthstoneRoles.forEach(async (r) => {
-                                    await interaction.guild.roles.delete(r, "탄생석 역할 무결성을 위해 삭제");
-                                });
-                            }
-                            if (options[2] == "true") {
-                                await interaction.editReply({ components: [] });
-                                await i.reply({ ephemeral: true, content: "시간이 좀 걸려요. 역할을 열심히 만들고있으니 잠시 기다려주세요!" });
-                                const birthstoneRoles = await Promise.all(
-                                    birthstones.map(async (b) => {
-                                        return await interaction.guild.roles.create({
-                                            name: `${b.name}`,
-                                            color: b.color,
-                                            hoist: false,
-                                        });
-                                    })
-                                );
-
-                                switch (options[3]) {
-                                    // 이모지만
-                                    case "emoji": {
-                                        zodiacRoles = await Promise.all(
-                                            zodiacs.map(async (z) => {
-                                                return await interaction.guild.roles.create({
-                                                    name: `${z.emoji}`,
-                                                    color: z.color,
-                                                    hoist: false,
-                                                });
-                                            })
-                                        );
-                                        break;
-                                    }
-
-                                    // 이름만
-                                    case "name": {
-                                        zodiacRoles = await Promise.all(
-                                            zodiacs.map(async (z) => {
-                                                return await interaction.guild.roles.create({
-                                                    name: `${z.name}`,
-                                                    color: z.color,
-                                                    hoist: false,
-                                                });
-                                            })
-                                        );
-                                        break;
-                                    }
-
-                                    // 이모지 + 이름
-                                    case "both": {
-                                        zodiacRoles = await Promise.all(
-                                            zodiacs.map(async (z) => {
-                                                return await interaction.guild.roles.create({
-                                                    name: `${z.emoji} ${z.name}`,
-                                                    color: z.color,
-                                                    hoist: false,
-                                                });
-                                            })
-                                        );
-                                        break;
-                                    }
-                                }
-                                await Settings.findByIdAndUpdate(
-                                    interaction.guildId,
-                                    {
-                                        _id: interaction.guildId,
-                                        roleNameType: options[3],
-                                        zodiacRoles: zodiacRoles,
-                                        birthstoneRoles: birthstoneRoles,
-                                    },
-                                    { upsert: true }
-                                );
-                                await i.editReply({ content: "24개의 역할을 등록했어요. 만약 역할을 모두 삭제하고싶다면 `/생일알림 역할 삭제` 명령어를 사용해주세요." });
-                            } else {
-                                await Settings.findByIdAndUpdate(
-                                    interaction.guildId,
-                                    {
-                                        _id: interaction.guildId,
-                                        roleNameType: "",
-                                        zodiacRoles: [],
-                                        birthstoneRoles: [],
-                                    },
-                                    { upsert: true }
-                                );
-                            }
                         }
                     }
                 });

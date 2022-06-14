@@ -1,7 +1,7 @@
 import * as mongoose from "mongoose";
 
 export interface IAnniversaries extends mongoose.Document {
-    userId: string;
+    _id: string;
     date: Date;
     allowCreateThread: boolean;
     participants: [string];
@@ -9,7 +9,7 @@ export interface IAnniversaries extends mongoose.Document {
 
 export const AnniversariesSchema = new mongoose.Schema(
     {
-        userId: String,
+        _id: String,
         date: Date,
         allowCreateThread: Boolean,
         participants: [String],

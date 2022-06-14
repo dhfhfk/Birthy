@@ -1,16 +1,20 @@
 import * as mongoose from "mongoose";
 
 export interface IBirthdays extends mongoose.Document {
-    userId: string;
+    _id: string;
     date: Date;
+    roles: [string];
+    lastModifiedAt: Date;
     allowCreateThread: boolean;
     allowShowAge: boolean;
 }
 
 export const BirthdaysSchema = new mongoose.Schema(
     {
-        userId: String,
+        _id: String,
         date: Date,
+        roles: [String],
+        lastModifiedAt: Date,
         allowCreateThread: Boolean,
         allowShowAge: Boolean,
     },

@@ -12,8 +12,44 @@ export async function saveChannel(guildId: string, channelId: string) {
     );
 }
 
+export function getAge(birthday: Date): { korean: number; western: number } {
+    const today = new Date();
+    const koreanAge = today.getFullYear() - birthday.getFullYear() + 1;
+    let westernAge = koreanAge;
+    const m = today.getMonth() - birthday.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthday.getDate())) {
+        westernAge--;
+    }
+    return {
+        korean: koreanAge,
+        western: westernAge,
+    };
+}
+
 // 별자리에 관심도 없고 뭐가 뭔지 모르겠어서 그냥 깃허브 gist에 있는거 따왔습니다.
 // https://github.com/tindoductran/zodiac/blob/master/getZodiac2.html
+
+export function getBirthstone(date: Date): { name: string; color: HexColorString } {
+    const birthstones: {
+        name: string;
+        color: HexColorString;
+    }[] = [
+        { name: "석류석", color: "#952929" },
+        { name: "자수정", color: "#9463c6" },
+        { name: "아쿠아마린", color: "#7bf7cd" },
+        { name: "다이아몬드", color: "#d2e4ec" },
+        { name: "에메랄드", color: "#4dc274" },
+        { name: "진주", color: "#dbd8cb" },
+        { name: "루비", color: "#d9105c" },
+        { name: "페리도트", color: "#aebe23" },
+        { name: "사파이어", color: "#0f4fb4" },
+        { name: "오팔", color: "#a3bdb6" },
+        { name: "토파즈", color: "#f7c278" },
+        { name: "탄자나이트", color: "#39497b" },
+    ];
+    const monthIndx: number = date.getMonth();
+    return birthstones[monthIndx];
+}
 
 export function getZodiac(date: Date): { name: string; color: HexColorString; emoji: string } {
     let signMonthIndex;
