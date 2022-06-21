@@ -1,9 +1,10 @@
+import Agenda from "agenda";
 import { Manager } from "erela.js";
 
 declare module "discord.js" {
     interface Client {
-        manager: Manager;
         languages: string[];
+        jobs: Agenda;
     }
     interface CommandInteraction {
         member: CacheTypeReducer<Cached, GuildMember>;

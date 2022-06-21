@@ -8,7 +8,7 @@ export interface ISettings extends mongoose.Document {
     subRole: boolean;
     zodiacRoles: [{ name: string; _id: string }];
     birthstoneRoles: [{ name: string; _id: string }];
-    allowCreateThread: boolean;
+    allowHideAge: boolean;
     allowCeleMessage: boolean;
     isPremium: boolean;
     premiumExpiryDate: Date;
@@ -33,7 +33,7 @@ export const SettingsSchema = new mongoose.Schema(
                 _id: String,
             },
         ],
-        allowCreateThread: Boolean,
+        allowHideAge: Boolean,
         allowCeleMessage: Boolean,
         isPremium: Boolean,
         premiumExpiryDate: Date,
