@@ -1,6 +1,6 @@
-import { Client, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton, Role, TextChannel, HexColorString, RoleManager } from "discord.js";
+import { Client, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton, Role, HexColorString } from "discord.js";
 import Settings from "../models/guild-settings";
-import { saveChannel, getZodiac } from "../utils/function";
+import { getAge } from "../utils/function";
 import { getLocaleString as t } from "../utils/localization";
 
 const zodiacs: {
@@ -48,11 +48,22 @@ module.exports = {
     descriptionLocalizations: {
         "en-US": "[Moderator only] Setup for anniversaries",
     },
+    defaultPermission: false,
+    dmPermission: false,
     options: [
         {
             name: "셋업",
             description: "[관리자] 기념일을 챙기기 위한 기본 셋업",
             type: "SUB_COMMAND",
+            options: [
+                {
+                    name: "채널",
+                    description: "어느 채널에 생일 알림을 전송해드릴까요? (선택하지 않으면 새로 만들어드릴게요)",
+                    type: "CHANNEL",
+                    channelTypes: ["GUILD_TEXT"],
+                    required: false,
+                },
+            ],
         },
         // {
         //     name: "공지전송",
@@ -112,6 +123,11 @@ module.exports = {
                 },
             ],
         },
+        {
+            name: "테스트",
+            description: "[관리자] 테스트용 생일 알림을 보내요.",
+            type: "SUB_COMMAND",
+        },
     ],
     permissions: ["ADMINISTRATOR"],
 
@@ -167,8 +183,16 @@ module.exports = {
                         // 채널 지정
                         case "지정": {
                             const channel = interaction.options.getChannel("채널", true);
-                            await saveChannel(interaction.guild.id, channel.id);
-                            return await interaction.editReply({
+                            await Settings.findByIdAndUpdate(
+                                interaction.guildId,
+                                {
+                                    _id: interaction.guildId,
+                                    channelId: channel.id,
+                                },
+                                { upsert: true }
+                            );
+                            return await interaction.reply({
+                                ephemeral: true,
                                 embeds: [
                                     {
                                         color: "#f5bed1",
@@ -192,7 +216,14 @@ module.exports = {
                             const channel = await interaction.guild.channels.create("🎂", {
                                 type: "GUILD_TEXT",
                             });
-                            await saveChannel(interaction.guild.id, channel.id);
+                            await Settings.findByIdAndUpdate(
+                                interaction.guildId,
+                                {
+                                    _id: interaction.guildId,
+                                    channelId: channel.id,
+                                },
+                                { upsert: true }
+                            );
                             return;
                         }
                     }
@@ -318,17 +349,21 @@ module.exports = {
                                 });
                             }
                             if (settingData) {
-                                settingData.zodiacRoles.forEach(async (r) => {
-                                    await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
-                                });
-                                settingData.birthstoneRoles.forEach(async (r) => {
-                                    await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
-                                });
+                                try {
+                                    settingData.zodiacRoles.forEach(async (r) => {
+                                        await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
+                                    });
+                                    settingData.birthstoneRoles.forEach(async (r) => {
+                                        await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
+                                    });
+                                } catch (e) {
+                                    //
+                                }
                                 await Settings.findByIdAndUpdate(
                                     interaction.guildId,
                                     {
                                         _id: interaction.guildId,
-                                        subRoles: false,
+                                        subRole: false,
                                         zodiacRoles: [],
                                         birthstoneRoles: [],
                                     },
@@ -368,7 +403,7 @@ module.exports = {
                                     ],
                                 });
                             }
-                            if (!settingData.subRole) {
+                            if (settingData.subRole) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
@@ -413,199 +448,165 @@ module.exports = {
         }
 
         switch (interaction.options.getSubcommand()) {
+            case "테스트": {
+                await interaction.deferReply({ ephemeral: true });
+                // 만약 채널 정보가 없다면
+                if (!settingData || !settingData.channelId || !client.channels.cache.get(settingData.channelId)) {
+                    return await interaction.editReply({
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                title: "<:xbold:985419129316065320> 지정된 생일 알림 채널이 없어요!",
+                                description: "이러면 생일 알림 기능이 제대로 작동하지 않을 거예요! 같이 해결해봐요.",
+                                fields: [
+                                    {
+                                        name: "해결법",
+                                        value: "`/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요.",
+                                        inline: false,
+                                    },
+                                ],
+                                footer: { text: interaction.guild.id },
+                            },
+                        ],
+                    });
+                }
+                const channel = client.channels.cache.get(settingData.channelId);
+                if (!channel || !channel.isText()) return;
+                try {
+                    const message = await channel.send({
+                        content: "`@here`",
+                        embeds: [
+                            {
+                                color: "#f5bed1",
+                                title: `<:cakeprogress:985470905314603018> 오늘은 ${client.user?.username}님의 ${getAge(new Date("2022-04-30")).western}번째 생일이에요!`,
+                                description: `<@${client.user?.id}>님의 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?`,
+                                fields: [
+                                    {
+                                        name: "\u200B",
+                                        value: "🤖 테스트 메시지입니다.",
+                                        inline: false,
+                                    },
+                                ],
+                            },
+                        ],
+                    });
+                    const thread = await message.startThread({
+                        name: `${client.user?.username}님의 생일`,
+                        autoArchiveDuration: 1440,
+                        reason: `${client.user?.username}님의 생일`,
+                    });
+                    await thread.members.add(client.user!.id);
+                    await thread.send({ content: `${client.user?.username}님 생일 축하드려요!🎉 즐겁고 행복한 테스트가 되길 바랄게요!` });
+
+                    return await interaction.editReply({ content: `<#${thread.id}> 테스트용 스레드를 생성했어요. 삭제는 알아서 해주세요!` });
+                } catch (e) {
+                    return await interaction.editReply({ content: `오류가 발생했어요. ${e}` });
+                }
+            }
+
             case "셋업": {
-                let createChannel = false;
                 let createRole = false;
-                let allowCreateThread = false;
-                let channel: TextChannel;
+                let createChannel = false;
+                let createSubRole = false;
+                let channel = interaction.options.getChannel("채널", false);
                 let role: Role;
+
+                if (!channel) {
+                    createChannel = true;
+                }
+
                 await interaction.reply({
                     ephemeral: true,
                     embeds: [
                         {
                             color: "#f5bed1",
-                            title: "<:cakeprogress00:985470906891632701> 모든 생일 알림을 전송할 채팅 채널을 새롭게 만들까요?",
-                            description: "새로운 채널 만들기를 원하지 않는다면 셋업 후 `/생일알림 채널 지정` 명령어를 이용해 이미 있는 채널을 지정해주세요.",
-                            fields: [
-                                {
-                                    name: "아니요",
-                                    value: "이미 있는 채널에 생일 알림을 전송할게요. (`/생일알림 채널 지정`명령어 필요)",
-                                    inline: false,
-                                },
-                                {
-                                    name: "네",
-                                    value: "채팅 채널을 만들고 그 채널에 생일 알림을 전송할게요.",
-                                },
-                            ],
-                            footer: { text: `1/4 진행 중, ${interaction.guildId}` },
+                            title: "<:cakeprogress00:985470906891632701> 서버의 멤버들이 나이를 숨길 수 있도록 할까요?",
+                            description: "허용하면 멤버가 생일을 등록할 때 공개 여부를 선택할 수 있어요.",
+                            footer: { text: `${interaction.guildId} 1/3 나이 숨기기` },
                         },
                     ],
                     components: [
                         new MessageActionRow().addComponents(
-                            new MessageButton().setCustomId(`${interaction.id}-channel-existing`).setLabel("아니요").setStyle("SECONDARY"),
-                            new MessageButton().setCustomId(`${interaction.id}-channel-create`).setLabel("네").setStyle("PRIMARY")
+                            new MessageButton().setCustomId(`${interaction.id}-hideAge-false`).setLabel("아니요").setStyle("SECONDARY"),
+                            new MessageButton().setCustomId(`${interaction.id}-hideAge-true`).setLabel("허용").setStyle("PRIMARY").setEmoji("<:cakeprogress:985470905314603018>")
                         ),
                     ],
                 });
+
                 const filter = (i: MessageComponentInteraction) => i.customId.startsWith(interaction.id);
 
                 const collector = interaction.channel?.createMessageComponentCollector({ filter, time: 300000 });
                 collector?.on("collect", async (i: MessageComponentInteraction) => {
                     const options = i.customId.split("-");
+                    if (!options[0].startsWith(interaction.id)) return;
                     switch (options[1]) {
-                        case "channel": {
-                            if (options[2] == "create") {
-                                createChannel = true;
-                            }
+                        case "hideAge": {
                             await i.deferUpdate();
-                            await interaction.editReply({
-                                embeds: [
-                                    {
-                                        color: "#f5bed1",
-                                        title: "<:cakeprogress01:985470908737134692> 서버의 멤버들이 생일 축하메시지를 전송하기 위한 개별 채팅 채널(스레드)을 만들어드릴까요?",
-                                        description: "자세한 정보는 아래 이미지를 참조해주세요.",
-                                        fields: [
-                                            {
-                                                name: "아니요",
-                                                value: "개별 채팅 채널을 만들지 않고 그냥 알림만 전송해요.",
-                                                inline: false,
-                                            },
-                                            {
-                                                name: "네",
-                                                value: "생일인 멤버에게 메시지를 전송할 수 있는 개별 채팅 채널을 만들어요. (다음 날이 되면 자동으로 보관 처리될거예요)",
-                                            },
-                                        ],
-                                        footer: { text: `2/4 진행 중, ${interaction.guildId}` },
-                                    },
-                                ],
-                                components: [
-                                    new MessageActionRow().addComponents(
-                                        new MessageButton().setCustomId(`${interaction.id}-thread-false`).setLabel("아니요").setStyle("SECONDARY"),
-                                        new MessageButton().setCustomId(`${interaction.id}-thread-true`).setLabel("네").setStyle("PRIMARY")
-                                    ),
-                                ],
-                            });
-                            return;
-                        }
-                        case "thread": {
-                            allowCreateThread = JSON.parse(options[2]);
                             await Settings.findByIdAndUpdate(
                                 interaction.guildId,
                                 {
                                     _id: interaction.guildId,
-                                    allowCreateThread: allowCreateThread,
+                                    allowHideAge: JSON.parse(options[2]),
                                 },
                                 { upsert: true }
                             );
-                            await i.deferUpdate();
                             await interaction.editReply({
                                 embeds: [
                                     {
                                         color: "#f5bed1",
-                                        title: "<:cakeprogress02:985470913938071642> 멤버 목록에서 생일인 멤버를 따로 확인할 수 있는 역할을 만들어드릴까요?",
+                                        title: "<:cakeprogress02:985470913938071642> 별자리, 탄생석 역할을 만들어드릴까요?",
                                         description: "자세한 정보는 아래 이미지를 참조해주세요.",
-                                        fields: [
-                                            {
-                                                name: "아니요",
-                                                value: "생일 역할 기능을 사용하지 않아요.",
-                                                inline: false,
-                                            },
-                                            {
-                                                name: "네",
-                                                value: "역할을 만들고 생일인 멤버에게 역할을 지정해요.",
-                                            },
-                                        ],
-                                        footer: { text: `3/4 진행 중, ${interaction.guildId}` },
+                                        image: {
+                                            url: "https://i.ibb.co/y8Qt021/subRoles.png",
+                                        },
+                                        footer: { text: `${interaction.guildId} 2/3 서브 역할 만들기` },
+                                    },
+                                ],
+                                components: [
+                                    new MessageActionRow().addComponents(
+                                        new MessageButton().setCustomId(`${interaction.id}-subRole-false`).setLabel("아니요").setStyle("SECONDARY"),
+                                        new MessageButton().setCustomId(`${interaction.id}-subRole-true`).setLabel("만들기").setStyle("PRIMARY").setEmoji("<:cakeprogress:985470905314603018>")
+                                    ),
+                                ],
+                            });
+                            break;
+                        }
+                        case "subRole": {
+                            await i.deferUpdate();
+                            createSubRole = JSON.parse(options[2]);
+                            await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: "#f5bed1",
+                                        title: "<:cakeprogress03:985470915540291624> 멤버 목록에서 생일인 멤버를 따로 확인할 수 있는 역할을 만들어드릴까요?",
+                                        description: "자세한 정보는 아래 이미지를 참조해주세요.",
+                                        image: {
+                                            url: "https://i.ibb.co/98kf4s3/Birthday-Role-01.png",
+                                        },
+                                        footer: { text: `${interaction.guildId} 3/3 생일 역할 만들기` },
                                     },
                                 ],
                                 components: [
                                     new MessageActionRow().addComponents(
                                         new MessageButton().setCustomId(`${interaction.id}-role-false`).setLabel("아니요").setStyle("SECONDARY"),
-                                        new MessageButton().setCustomId(`${interaction.id}-role-true`).setLabel("네").setStyle("PRIMARY")
+                                        new MessageButton().setCustomId(`${interaction.id}-role-true`).setLabel("만들기").setStyle("PRIMARY").setEmoji("<:cakeprogress:985470905314603018>")
                                     ),
                                 ],
                             });
-                            return;
+                            break;
                         }
                         case "role": {
-                            if (options[2] == "true") {
-                                createRole = true;
-                            }
-                            //? 생일 역할 이름 커스텀 모달인데 순서 이슈로 비활성화
-                            // await i.showModal({
-                            //     title: "생일 역할 커스텀",
-                            //     customId: `${interaction.id}-role-true`,
-                            //     components: [
-                            //         {
-                            //             type: 1,
-                            //             components: [
-                            //                 {
-                            //                     type: 4,
-                            //                     customId: "role-name",
-                            //                     label: "생일 역할 이름을 지정해주세요. (서버 설정에서 언제나 바꿀 수 있어요)",
-                            //                     style: 1,
-                            //                     min_length: 1,
-                            //                     max_length: 100,
-                            //                     placeholder: "🎂오늘 생일인 멤버들!",
-                            //                     required: true,
-                            //                 },
-                            //             ],
-                            //         },
-                            //     ],
-                            // });
-
-                            //? 별자리, 탄생석 역할 기능
                             await i.deferUpdate();
-                            const todayZodiac = getZodiac(new Date());
-                            await interaction.editReply({
-                                embeds: [
-                                    {
-                                        color: "#f5bed1",
-                                        title: "<:cakeprogress03:985470915540291624> 탄생석과 별자리를 역할로 만들고 멤버에게 지정해드릴까요?",
-                                        description: "자세한 정보는 아래 설명을 참조해주세요.",
-                                        fields: [
-                                            {
-                                                name: "아니요",
-                                                value: "탄생석 및 별자리 기능을 사용하지 않아요.",
-                                                inline: false,
-                                            },
-                                            {
-                                                name: "네",
-                                                value: `멤버의 선택에 따라 \`${todayZodiac.emoji} ${todayZodiac.name}\` 같은 역할을 부여할게요.`,
-                                            },
-                                        ],
-                                        footer: { text: `4/4 진행 중, ${interaction.guildId}` },
-                                    },
-                                ],
-                                components: [
-                                    new MessageActionRow().addComponents(
-                                        new MessageButton().setCustomId(`${interaction.id}-subrole-false`).setLabel("아니요").setStyle("SECONDARY"),
-                                        new MessageButton().setCustomId(`${interaction.id}-subrole-true`).setLabel("네").setStyle("PRIMARY")
-                                    ),
-                                ],
-                            });
-                            return;
-                        }
-                        case "subrole": {
-                            await Settings.findByIdAndUpdate(
-                                interaction.guildId,
-                                {
-                                    _id: interaction.guildId,
-                                    subRole: JSON.parse(options[2]),
-                                },
-                                { upsert: true }
-                            );
+                            createRole = JSON.parse(options[2]);
                             if (createChannel) {
                                 channel = await interaction.guild.channels.create("🎂", {
                                     type: "GUILD_TEXT",
                                 });
-                                await saveChannel(interaction.guild.id, channel.id);
-                            } else {
-                                await saveChannel(interaction.guild.id, "");
                             }
+                            // 생일 역할 만들기
                             if (createRole) {
-                                // 생일 역할 만들기
                                 if (settingData?.roleId) await interaction.guild.roles.delete(settingData.roleId, "무결성을 위해 삭제");
+
                                 try {
                                     // 가능하다면 가장 높은 위치로
                                     role = await interaction.guild.roles.create({
@@ -625,30 +626,15 @@ module.exports = {
                                             hoist: true,
                                         });
                                 }
-                                await Settings.findByIdAndUpdate(
-                                    interaction.guildId,
-                                    {
-                                        _id: interaction.guildId,
-                                        roleId: role.id,
-                                    },
-                                    { upsert: true }
-                                );
-                            } else {
-                                // 생일 역할을 만들지 않음
-                                await Settings.findByIdAndUpdate(
-                                    interaction.guildId,
-                                    {
-                                        _id: interaction.guildId,
-                                        roleId: "",
-                                    },
-                                    { upsert: true }
-                                );
                             }
                             await Settings.findByIdAndUpdate(
                                 interaction.guildId,
                                 {
                                     _id: interaction.guildId,
                                     isSetup: true,
+                                    subRole: createSubRole,
+                                    channelId: channel?.id,
+                                    roleId: role ? role.id : "",
                                 },
                                 { upsert: true }
                             );
@@ -665,13 +651,13 @@ module.exports = {
                                                 inline: false,
                                             },
                                             {
-                                                name: "스레드 만들기",
-                                                value: allowCreateThread ? "예" : "아니오",
+                                                name: "생일 역할",
+                                                value: role ? `<@&${role.id}>` : "사용하지 않음",
                                                 inline: false,
                                             },
                                             {
-                                                name: "생일 역할",
-                                                value: role ? `<@&${role.id}>` : "사용하지 않음",
+                                                name: "\u200B",
+                                                value: "`/생일알림 공지전송` 명령어를 통해 등록 가이드를 전송할 수 있어요.",
                                                 inline: false,
                                             },
                                         ],
@@ -681,7 +667,6 @@ module.exports = {
                                 components: [],
                             });
                             if (role) await interaction.followUp({ ephemeral: true, content: `팁: \`서버 설정\` -> \`역할\`메뉴에서 <@&${role.id}>역할을 가장 위로 끌어올리면 생일인 멤버들을 목록 위에서 확인할 수 있어요.` });
-                            if (!channel) await interaction.followUp({ ephemeral: true, content: "꼭 **`/생일알림 채널 지정` 명령어로 채널을 지정해주세요!**" });
                             return;
                         }
                     }

@@ -1,8 +1,7 @@
-import { ContextMenuInteraction, EmbedFieldData, Interaction, MessageEmbedOptions } from "discord.js";
-import { Client, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton, Role, TextChannel } from "discord.js";
+import { Client, ContextMenuInteraction, EmbedFieldData, MessageEmbedOptions } from "discord.js";
 import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
-import { getZodiac, getBirthstone, getAge } from "../utils/function";
+import { getZodiac, getBirthstone, getAge, getNextBirthday } from "../utils/function";
 import { getLocaleString as t } from "../utils/localization";
 
 module.exports = {
@@ -13,8 +12,8 @@ module.exports = {
         await interaction.deferReply({ ephemeral: true });
 
         const user = await client.users.fetch(interaction.targetId);
-        const guildData = await Settings.findById(interaction.guildId);
-        const userData = await Birthdays.findById(user.id);
+        const guildData = await Settings.findById(interaction.guildId).lean();
+        const userData = await Birthdays.findById(user.id).lean();
 
         if (!guildData)
             return await interaction.editReply({
@@ -34,13 +33,19 @@ module.exports = {
                     },
                 ],
             });
-        if (!userData) return await interaction.editReply({ content: `${user.username}님은 아직 생일정보를 등록하지 않았어요.` });
+        if (!userData || !userData.date) return await interaction.editReply({ content: `${user.username}님은 아직 생일정보를 등록하지 않았어요.` });
+        const userGuildData = userData.guilds.find((guild) => {
+            return guild._id == interaction.guildId;
+        });
+        if (!userGuildData) return await interaction.editReply({ content: `${user.username}님은 아직 생일정보를 등록하지 않았어요.` });
 
         const rawBirthday = userData?.date;
 
         const age = getAge(rawBirthday);
         const month = ("0" + (rawBirthday.getMonth() + 1)).slice(-2);
         const day = ("0" + rawBirthday.getDate()).slice(-2);
+
+        const nextBirthday = getNextBirthday(rawBirthday);
 
         const embed: MessageEmbedOptions = {
             color: "#f5bed1",
@@ -52,12 +57,12 @@ module.exports = {
             fields: [
                 {
                     name: "생일",
-                    value: `${userData.allowShowAge ? `${rawBirthday.getFullYear()}년` : ""} ${month}월 ${day}일`,
+                    value: `${userGuildData.allowShowAge ? `${rawBirthday.getFullYear()}년` : ""} ${month}월 ${day}일\n<t:${nextBirthday.unix}:R>`,
                     inline: false,
                 },
                 {
                     name: "나이",
-                    value: `${userData.allowShowAge ? `${age.korean}살 (만 ${age.western}살)` : "🔒"}`,
+                    value: `${userGuildData.allowShowAge ? `${age.korean}살 (만 ${age.western}살)` : "🔒"}`,
                     inline: false,
                 },
             ],

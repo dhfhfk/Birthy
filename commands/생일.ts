@@ -1,8 +1,6 @@
-import { Interaction } from "discord.js";
-import { Client, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton } from "discord.js";
+import { Client, Interaction, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
-import { saveChannel, getZodiac, getBirthstone } from "../utils/function";
 import { getLocaleString as t } from "../utils/localization";
 
 module.exports = {
@@ -11,8 +9,17 @@ module.exports = {
     options: [
         {
             name: "등록",
-            description: "내 생일을 등록하고 멤버들의 축하를 받아보세요! (나이는 비공개할 수 있어요)",
+            description: "내 생일을 등록하고 멤버들의 축하를 받아보세요!",
             type: "SUB_COMMAND",
+            options: [
+                {
+                    name: "나이공개",
+                    description: "다른 멤버에게 나이를 공개할까요? (서버 설정에 따름)",
+                    type: "STRING",
+                    autocomplete: true,
+                    required: true,
+                },
+            ],
         },
         {
             name: "변경",
@@ -25,23 +32,32 @@ module.exports = {
             type: "SUB_COMMAND",
         },
         {
-            name: "서버설정",
-            description: "이 서버에서 생일 알림을 받을지 설정할 수 있어요.",
+            name: "서버",
+            description: "이 서버에서 생일 알림을 받지 않도록 설정해요.",
             type: "SUB_COMMAND",
         },
         {
-            name: "설정",
-            description: "내 생일에 관련된 설정",
+            name: "공개설정",
+            description: "이 서버에서 생일을 공개할지 설정해요.",
             type: "SUB_COMMAND",
+            options: [
+                {
+                    name: "나이공개",
+                    description: "다른 멤버에게 나이를 공개할까요? (서버 설정에 따름)",
+                    type: "STRING",
+                    autocomplete: true,
+                    required: true,
+                },
+            ],
         },
     ],
 
     run: async (client: Client, interaction: CommandInteraction, locale: string) => {
         // 설정 정보 가져오기
-        const settingData = await Settings.findById(interaction.guild.id);
+        const guildSetting = await Settings.findById(interaction.guild.id);
         const userData = await Birthdays.findById(interaction.user.id);
 
-        if (!settingData || !settingData.isSetup) {
+        if (!guildSetting || !guildSetting.isSetup) {
             return await interaction.reply({
                 ephemeral: true,
                 embeds: [
@@ -52,7 +68,7 @@ module.exports = {
                         fields: [
                             {
                                 name: "해결법",
-                                value: interaction.member.permissions.has(["ADMINISTRATOR"]) ? "마침 관리자분이셨네요! `/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요!" : "서버 관리자에게 `/생일알림 셋업`명령어 사용을 요청해주세요!",
+                                value: interaction.member.permissions.has(["ADMINISTRATOR"]) ? "마침 관리자분이셨네요! `/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요." : "서버 관리자에게 `/생일알림 셋업`명령어 사용을 요청해주세요.",
                                 inline: false,
                             },
                         ],
@@ -63,6 +79,120 @@ module.exports = {
         }
 
         switch (interaction.options.getSubcommand()) {
+            case "공개설정": {
+                if (!userData || !userData.date) {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
+                                description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
+                                footer: { text: `${interaction.guildId}` },
+                            },
+                        ],
+                    });
+                }
+                const userGuildData = userData.guilds.find((guild) => interaction.guildId == guild._id);
+                if (!userGuildData) {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f5bed1",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: `<:cakeprogress:985470905314603018> 나이가 ${JSON.parse(interaction.options.getString("나이공개", true)) ? "공개" : "비공개"}된 생일 알림을 받도록 설정했어요`,
+                                description: "이미 등록해둔 생일 정보로 생일 알림을 등록했어요.",
+                                footer: { text: `${interaction.guildId}` },
+                            },
+                        ],
+                    });
+                }
+                await Birthdays.findOneAndUpdate(
+                    { _id: interaction.user.id, "guilds._id": interaction.guildId },
+                    {
+                        $set: {
+                            "guilds.$.allowShowAge": JSON.parse(interaction.options.getString("나이공개", true)) ? true : false,
+                        },
+                    }
+                );
+                return await interaction.reply({
+                    ephemeral: true,
+                    embeds: [
+                        {
+                            color: "#f5bed1",
+                            author: {
+                                name: interaction.member.nickname || interaction.user.username,
+                                icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                            },
+                            title: `<:cakeprogress:985470905314603018> 나이가 ${JSON.parse(interaction.options.getString("나이공개", true)) ? "공개" : "비공개"}된 생일 알림을 받도록 설정했어요`,
+                            footer: { text: `${interaction.guildId}` },
+                        },
+                    ],
+                });
+            }
+            case "서버": {
+                if (!userData || !userData.date) {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
+                                description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
+                                footer: { text: `${interaction.guildId}` },
+                            },
+                        ],
+                    });
+                }
+                if (!userData.guilds.find((guild) => interaction.guildId == guild._id)) {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f5bed1",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:cakeprogress00:985470906891632701> 이미 서버에 생일 알림이 등록되어있지 않아요.",
+                                description: "만약 이 서버에서 생일 알림을 받고싶으시다면 `/생일 등록` 명령어를 사용해주세요.",
+                                footer: { text: `${interaction.guildId}` },
+                            },
+                        ],
+                    });
+                }
+                await Birthdays.findByIdAndUpdate(interaction.user.id, {
+                    _id: interaction.user.id,
+                    $pull: { guilds: { _id: interaction.guildId } },
+                });
+                return await interaction.reply({
+                    ephemeral: true,
+                    embeds: [
+                        {
+                            color: "#f5bed1",
+                            author: {
+                                name: interaction.member.nickname || interaction.user.username,
+                                icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                            },
+                            title: "<:cakeprogress00:985470906891632701> 이 서버에서 알림을 받지 않도록 설정했어요",
+                            description: "만약 이 서버에서 생일 알림을 받고싶으시다면 `/생일 등록` 명령어를 사용해주세요.",
+                            footer: { text: `${interaction.guildId}` },
+                        },
+                    ],
+                });
+            }
             case "삭제": {
                 if (!userData || !userData.date) {
                     return await interaction.reply({
@@ -75,14 +205,7 @@ module.exports = {
                                     icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
                                 },
                                 title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
-                                description: "같이 해결해봐요.",
-                                fields: [
-                                    {
-                                        name: "해결법",
-                                        value: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요!",
-                                        inline: false,
-                                    },
-                                ],
+                                description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
                                 footer: { text: `${interaction.guildId}` },
                             },
                         ],
@@ -98,24 +221,14 @@ module.exports = {
                                 icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
                             },
                             title: "<:cakeprogress:985470905314603018> 정말 생일 정보를 삭제할까요?",
-                            fields: [
-                                {
-                                    name: "삭제",
-                                    value: "생일 정보를 삭제할게요.",
-                                    inline: false,
-                                },
-                                {
-                                    name: "아니요",
-                                    value: "생일 정보 삭제를 취소해요.",
-                                },
-                            ],
+                            description: "생일 정보가 모든 서버에서 삭제될거예요.",
                             footer: { text: `${interaction.guildId}` },
                         },
                     ],
                     components: [
                         new MessageActionRow().addComponents(
-                            new MessageButton().setCustomId(`${interaction.id}-delete-true`).setLabel("삭제").setStyle("DANGER"),
-                            new MessageButton().setCustomId(`${interaction.id}-delete-false`).setLabel("아니오").setStyle("SECONDARY")
+                            new MessageButton().setCustomId(`${interaction.id}-delete-false`).setLabel("아니오").setStyle("SECONDARY").setEmoji("<:cakeprogress:985470905314603018>"),
+                            new MessageButton().setCustomId(`${interaction.id}-delete-true`).setLabel("삭제").setStyle("DANGER").setEmoji("<:cakeprogress00:985470906891632701>")
                         ),
                     ],
                 });
@@ -123,7 +236,7 @@ module.exports = {
             }
             case "등록": {
                 if (userData && userData.date) {
-                    if (userData.guilds.find((guild) => interaction.guildId == guild)) {
+                    if (userData.guilds.find((guild) => interaction.guildId == guild._id)) {
                         return await interaction.reply({
                             ephemeral: true,
                             embeds: [
@@ -134,14 +247,7 @@ module.exports = {
                                         icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
                                     },
                                     title: "<:cakeprogress:985470905314603018> 이미 생일이 등록되어있어요!",
-                                    description: "만약 생일을 변경하려 하시려면 아래의 설명을 따라가주세요.",
-                                    fields: [
-                                        {
-                                            name: "생일 변경하기",
-                                            value: "`/생일 변경` 명령어를 사용해 생일을 바꿀 수 있어요",
-                                            inline: false,
-                                        },
-                                    ],
+                                    description: "만약 생일을 변경하고 싶으시다면 `/생일 변경` 명령어를 사용해주세요.",
                                     footer: { text: `${interaction.guildId}` },
                                 },
                             ],
@@ -149,7 +255,7 @@ module.exports = {
                     }
                     await Birthdays.findByIdAndUpdate(interaction.user.id, {
                         _id: interaction.user.id,
-                        $push: { guilds: interaction.guildId },
+                        $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
                     });
                     return await interaction.reply({
                         ephemeral: true,
@@ -160,7 +266,7 @@ module.exports = {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
                                 },
-                                title: "<:cakeprogress:985470905314603018> 이 서버에서도 생일 알림을 받도록 설정했어요.",
+                                title: "<:cakeprogress:985470905314603018> 이 서버에서도 생일 알림을 받도록 설정했어요",
                                 description: "이미 등록해둔 생일 정보로 생일 알림을 등록했어요.",
                                 fields: [
                                     {
@@ -189,8 +295,7 @@ module.exports = {
                                         today.getFullYear() +
                                         (today.getMonth() + 1 > 9 ? (today.getMonth() + 1).toString() : "0" + (today.getMonth() + 1)) +
                                         (today.getDate() > 9 ? today.getDate().toString() : "0" + today.getDate().toString())
-                                    } 형식
-(나이는 비공개할 수 있어요)`,
+                                    } 형식으로 입력해주세요.`,
                                     style: 1,
                                     min_length: 8,
                                     max_length: 8,
@@ -225,7 +330,7 @@ module.exports = {
                         //
                     }
                     await Birthdays.findByIdAndUpdate(interaction.user.id, {
-                        $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, allowShowAge: 1 },
+                        $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1 },
                     });
                     await interaction.editReply({ content: "생일 삭제를 완료했습니다.", embeds: [], components: [] });
                     return;
@@ -249,11 +354,11 @@ module.exports = {
                                     fields: [
                                         {
                                             name: "해결법",
-                                            value: "YYYYMMDD 형식으로 생일을 바르게 입력해주세요! (나이는 비공개할 수 있어요)",
+                                            value: "YYYYMMDD 형식으로 생일을 바르게 입력해주세요!",
                                             inline: false,
                                         },
                                     ],
-                                    footer: { text: `${interaction.guildId}` },
+                                    footer: { text: `${interaction.user.id}` },
                                 },
                             ],
                         });
@@ -261,6 +366,7 @@ module.exports = {
                     const month = Number(rawDate.substring(4, 6));
                     const day = Number(rawDate.substring(6, 8));
                     const birthday = new Date(year, month - 1, day + 0);
+                    birthday.setHours(birthday.getHours() + 9);
                     const date2 = `${birthday.getFullYear()}년 ${("0" + (birthday.getMonth() + 1)).slice(-2)}월 ${("0" + birthday.getDate()).slice(-2)}일`;
                     await i.reply({
                         ephemeral: true,
@@ -272,372 +378,48 @@ module.exports = {
                                     icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
                                 },
                                 title: `<:cakeprogress00:985470906891632701> ${date2}`,
-                                description: "나이를 🔒비공개 처리 할까요?",
+                                description: "생일을 맞게 입력하셨나요?",
                                 fields: [
                                     {
-                                        name: "공개",
-                                        value: "다른 사람이 내 나이를 확인할 수 있고 생일 알림에 나이가 공개될 거예요.",
-                                        inline: false,
-                                    },
-                                    {
-                                        name: "🔒비공개",
-                                        value: "다른 사람에게 나이를 알리지 않을게요.",
-                                    },
-                                    {
                                         name: "\u200B",
-                                        value: "이 설정은 언제나 변경할 수 있어요.",
+                                        value: "생일을 잘못 입력했다면 메시지 닫기 후 명령어를 다시 사용해주세요.",
                                     },
                                 ],
-                                footer: { text: `${interaction.guildId} 생일을 잘못 입력했다면 메시지 닫기 후 명령어를 다시 사용해주세요.` },
+                                footer: { text: interaction.user.id },
                             },
                         ],
                         components: [
                             new MessageActionRow().addComponents(
-                                new MessageButton().setCustomId(`${interaction.id}-privateAge-true`).setLabel("공개").setStyle("SECONDARY"),
-                                new MessageButton().setCustomId(`${interaction.id}-privateAge-false`).setLabel("🔒비공개").setStyle("PRIMARY")
+                                new MessageButton().setCustomId(`${interaction.id}-correctAge-false`).setLabel("잘못됐어요").setStyle("SECONDARY").setEmoji("<:xbold:985419129316065320>"),
+                                new MessageButton().setCustomId(`${interaction.id}-correctAge-true`).setLabel("맞아요").setStyle("PRIMARY").setEmoji("<:cakeprogress:985470905314603018>")
                             ),
                         ],
                     });
-
-                    if (userData && !userData.guilds.find((guild) => interaction.guildId == guild)) {
-                        await Birthdays.findByIdAndUpdate(
-                            interaction.user.id,
-                            {
-                                _id: interaction.user.id,
-                                $push: { guilds: interaction.guildId },
-                            },
-                            { upsert: true }
-                        );
-                    }
-
-                    const filter = (ii: MessageComponentInteraction) => ii.customId.startsWith(interaction.id);
+                    const filter = (i: MessageComponentInteraction) => i.customId.startsWith(interaction.id);
 
                     const collector = interaction.channel?.createMessageComponentCollector({ filter, time: 300000 });
                     collector?.on("collect", async (ii: MessageComponentInteraction) => {
                         const options = ii.customId.split("-");
+                        if (!options[0].startsWith(interaction.id)) return;
                         switch (options[1]) {
-                            case "privateAge": {
-                                await ii.deferUpdate();
+                            case "correctAge": {
+                                if (!JSON.parse(options[2])) {
+                                    await i.editReply({ content: "`/생일 등록` 명령어를 다시 사용해주세요.", embeds: [], components: [] });
+                                    return;
+                                }
                                 await Birthdays.findByIdAndUpdate(
                                     interaction.user.id,
                                     {
                                         _id: interaction.user.id,
-                                        date: birthday,
                                         lastModifiedAt: new Date(),
-                                        allowShowAge: JSON.parse(options[2]),
+                                        modifiedCount: 0,
+                                        date: birthday,
+                                        month: ("0" + (birthday.getMonth() + 1)).slice(-2),
+                                        day: ("0" + birthday.getDate()).slice(-2),
+                                        $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
                                     },
                                     { upsert: true }
                                 );
-                                if (settingData.subRole) {
-                                    await i.editReply({
-                                        embeds: [
-                                            {
-                                                color: "#f5bed1",
-                                                author: {
-                                                    name: interaction.member?.nickname || interaction.user.username,
-                                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
-                                                },
-                                                title: "<:cakeprogress02:985470913938071642> 별자리, 탄생석 역할을 추가해드릴까요?",
-                                                description: "별자리와 탄생석에 관심이 많으시다면 좋은 선택이 될 거예요.",
-                                                fields: [
-                                                    {
-                                                        name: "아니요",
-                                                        value: "탄생석 및 별자리 기능을 사용하지 않아요.",
-                                                        inline: false,
-                                                    },
-                                                    {
-                                                        name: "네",
-                                                        value: `서버 설정에 따른 **${getZodiac(birthday).name}, ${getBirthstone(birthday).name}** 역할을 추가해드릴게요.`,
-                                                    },
-                                                ],
-                                                footer: { text: `${interaction.guildId}` },
-                                            },
-                                        ],
-                                        components: [
-                                            new MessageActionRow().addComponents(
-                                                new MessageButton().setCustomId(`${interaction.id}-subrole-false`).setLabel("아니요").setStyle("SECONDARY"),
-                                                new MessageButton().setCustomId(`${interaction.id}-subrole-true`).setLabel("네").setStyle("PRIMARY")
-                                            ),
-                                        ],
-                                    });
-                                    return;
-                                } else {
-                                    if (settingData.allowCreateThread) {
-                                        await i.editReply({
-                                            embeds: [
-                                                {
-                                                    color: "#f5bed1",
-                                                    author: {
-                                                        name: interaction.member.nickname || interaction.user.username,
-                                                        icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
-                                                    },
-                                                    title: "<:cakeprogress03:985470915540291624> 생일날에 개인 채널(스레드)을 따로 만들어드릴까요?",
-                                                    description: "롤링 페이퍼를 받는 느낌일 거예요!",
-                                                    fields: [
-                                                        {
-                                                            name: "아니요",
-                                                            value: "그냥 생일 알림만 전송할게요.",
-                                                            inline: false,
-                                                        },
-                                                        {
-                                                            name: "네",
-                                                            value: `생일날이 되면 ${interaction.member.nickname || interaction.user.username}님을 위한 채널(스레드)을 만들어드릴게요.`,
-                                                        },
-                                                        {
-                                                            name: "\u200B",
-                                                            value: "생일이 지나면 자동으로 보관 처리 될 거예요.",
-                                                        },
-                                                    ],
-                                                    footer: { text: `${interaction.guildId}` },
-                                                },
-                                            ],
-                                            components: [
-                                                new MessageActionRow().addComponents(
-                                                    new MessageButton().setCustomId(`${interaction.id}-thread-false`).setLabel("아니요").setStyle("SECONDARY"),
-                                                    new MessageButton().setCustomId(`${interaction.id}-thread-true`).setLabel("네").setStyle("PRIMARY")
-                                                ),
-                                            ],
-                                        });
-                                    } else {
-                                        await i.editReply({
-                                            embeds: [
-                                                {
-                                                    color: "#f5bed1",
-                                                    author: {
-                                                        name: interaction.member.nickname || interaction.user.username,
-                                                        icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
-                                                    },
-                                                    title: "<:cakeprogress:985470905314603018> 생일을 등록했어요!",
-                                                    description: "이제 이 서버에서 생일 알림을 받을 수 있어요.",
-                                                    fields: [
-                                                        {
-                                                            name: "Q. 다른 서버에서도 생일 알림이 전송되나요?",
-                                                            value: "`/생일 등록` 명령어를 사용한 서버에서만 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 `/생일 서버설정` 명령어를 사용해주세요.",
-                                                            inline: false,
-                                                        },
-                                                    ],
-                                                    footer: { text: `${interaction.guildId}` },
-                                                },
-                                            ],
-                                            components: [],
-                                        });
-                                        break;
-                                    }
-                                }
-                                return;
-                            }
-                            case "subrole": {
-                                await ii.deferUpdate();
-                                if (options[2] !== "false") {
-                                    //
-                                    const zodiac = getZodiac(birthday);
-                                    const birthstone = getBirthstone(birthday);
-                                    let role: any;
-                                    const existingZodiacRole: { name: string; _id: string } | undefined = settingData.zodiacRoles.find((role) => role.name == zodiac.name);
-                                    if (existingZodiacRole) {
-                                        role = await interaction.guild.roles.fetch(existingZodiacRole?._id);
-                                    }
-                                    if (!role || !existingZodiacRole) {
-                                        role = await interaction.guild.roles.create({
-                                            name: `${zodiac.emoji} ${zodiac.name}`,
-                                            permissions: [],
-                                            color: zodiac.color,
-                                        });
-                                    }
-                                    if (!interaction.member.roles.cache.find((r) => r.id == role.id)) {
-                                        await Birthdays.findByIdAndUpdate(
-                                            interaction.user.id,
-                                            {
-                                                _id: interaction.user.id,
-                                                $push: { roles: role.id },
-                                            },
-                                            { upsert: true }
-                                        );
-                                    }
-                                    await interaction.member.roles.add(role);
-                                    if (!existingZodiacRole) {
-                                        await Settings.findByIdAndUpdate(
-                                            interaction.guildId,
-                                            {
-                                                _id: interaction.guildId,
-                                                $push: { zodiacRoles: { name: zodiac.name, _id: role.id } },
-                                            },
-                                            { upsert: true }
-                                        );
-                                    }
-                                    const existingBirthstonecRole: { name: string; _id: string } | undefined = settingData.birthstoneRoles.find((role) => role.name == birthstone.name);
-                                    if (existingBirthstonecRole) {
-                                        role = await interaction.guild.roles.fetch(existingBirthstonecRole?._id);
-                                    }
-                                    if (!role || !existingBirthstonecRole) {
-                                        role = await interaction.guild.roles.create({
-                                            name: `${birthstone.name}`,
-                                            permissions: [],
-                                            color: birthstone.color,
-                                        });
-                                    }
-                                    if (!interaction.member.roles.cache.find((r) => r.id == role.id)) {
-                                        await Birthdays.findByIdAndUpdate(
-                                            interaction.user.id,
-                                            {
-                                                _id: interaction.user.id,
-                                                $push: { roles: role.id },
-                                            },
-                                            { upsert: true }
-                                        );
-                                    }
-                                    await interaction.member.roles.add(role);
-                                    if (!existingBirthstonecRole) {
-                                        await Settings.findByIdAndUpdate(
-                                            interaction.guildId,
-                                            {
-                                                _id: interaction.guildId,
-                                                $push: { birthstoneRoles: { name: birthstone.name, _id: role.id } },
-                                            },
-                                            { upsert: true }
-                                        );
-                                    }
-                                    await Birthdays.findByIdAndUpdate(
-                                        interaction.user.id,
-                                        {
-                                            _id: interaction.user.id,
-                                            $push: { roles: role.id },
-                                        },
-                                        { upsert: true }
-                                    );
-                                    if (settingData.allowCreateThread) {
-                                        await i.editReply({
-                                            embeds: [
-                                                {
-                                                    color: "#f5bed1",
-                                                    author: {
-                                                        name: interaction.member.nickname || interaction.user.username,
-                                                        icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
-                                                    },
-                                                    title: "<:cakeprogress03:985470915540291624> 생일날에 개인 채널(스레드)을 따로 만들어드릴까요?",
-                                                    description: "롤링 페이퍼를 받는 느낌일 거예요!",
-                                                    fields: [
-                                                        {
-                                                            name: "아니요",
-                                                            value: "그냥 생일 알림만 전송할게요.",
-                                                            inline: false,
-                                                        },
-                                                        {
-                                                            name: "네",
-                                                            value: `생일날이 되면 ${interaction.member.nickname || interaction.user.username}님을 위한 채널(스레드)을 만들어드릴게요.`,
-                                                        },
-                                                        {
-                                                            name: "\u200B",
-                                                            value: "생일이 지나면 자동으로 보관 처리 될 거예요.",
-                                                        },
-                                                    ],
-                                                    footer: { text: `${interaction.guildId}` },
-                                                },
-                                            ],
-                                            components: [
-                                                new MessageActionRow().addComponents(
-                                                    new MessageButton().setCustomId(`${interaction.id}-thread-false`).setLabel("아니요").setStyle("SECONDARY"),
-                                                    new MessageButton().setCustomId(`${interaction.id}-thread-true`).setLabel("네").setStyle("PRIMARY")
-                                                ),
-                                            ],
-                                        });
-                                    } else {
-                                        await i.editReply({
-                                            embeds: [
-                                                {
-                                                    color: "#f5bed1",
-                                                    author: {
-                                                        name: interaction.member.nickname || interaction.user.username,
-                                                        icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
-                                                    },
-                                                    title: "<:cakeprogress:985470905314603018> 생일을 등록했어요!",
-                                                    description: "이제 이 서버에서 생일 알림을 받을 수 있어요.",
-                                                    fields: [
-                                                        {
-                                                            name: "Q. 다른 서버에서도 생일 알림이 전송되나요?",
-                                                            value: "`/생일 등록` 명령어를 사용한 서버에서만 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 `/생일 서버설정` 명령어를 사용해주세요.",
-                                                            inline: false,
-                                                        },
-                                                    ],
-                                                    footer: { text: `${interaction.guildId}` },
-                                                },
-                                            ],
-                                            components: [],
-                                        });
-                                        return;
-                                    }
-                                }
-                                if (settingData.allowCreateThread) {
-                                    await i.editReply({
-                                        embeds: [
-                                            {
-                                                color: "#f5bed1",
-                                                author: {
-                                                    name: interaction.member.nickname || interaction.user.username,
-                                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
-                                                },
-                                                title: "<:cakeprogress03:985470915540291624> 생일날에 개인 채널(스레드)을 따로 만들어드릴까요?",
-                                                description: "롤링 페이퍼를 받는 느낌일 거예요!",
-                                                fields: [
-                                                    {
-                                                        name: "아니요",
-                                                        value: "그냥 생일 알림만 전송할게요.",
-                                                        inline: false,
-                                                    },
-                                                    {
-                                                        name: "네",
-                                                        value: `생일날이 되면 ${interaction.member.nickname || interaction.user.username}님을 위한 채널(스레드)을 만들어드릴게요.`,
-                                                    },
-                                                    {
-                                                        name: "\u200B",
-                                                        value: "생일이 지나면 자동으로 보관 처리 될 거예요.",
-                                                    },
-                                                ],
-                                                footer: { text: `${interaction.guildId}` },
-                                            },
-                                        ],
-                                        components: [
-                                            new MessageActionRow().addComponents(
-                                                new MessageButton().setCustomId(`${interaction.id}-thread-false`).setLabel("아니요").setStyle("SECONDARY"),
-                                                new MessageButton().setCustomId(`${interaction.id}-thread-true`).setLabel("네").setStyle("PRIMARY")
-                                            ),
-                                        ],
-                                    });
-                                } else {
-                                    await i.editReply({
-                                        embeds: [
-                                            {
-                                                color: "#f5bed1",
-                                                author: {
-                                                    name: interaction.member.nickname || interaction.user.username,
-                                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
-                                                },
-                                                title: "<:cakeprogress:985470905314603018> 생일을 등록했어요!",
-                                                description: "이제 이 서버에서 생일 알림을 받을 수 있어요.",
-                                                fields: [
-                                                    {
-                                                        name: "Q. 다른 서버에서도 생일 알림이 전송되나요?",
-                                                        value: "`/생일 등록` 명령어를 사용한 서버에서만 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 `/생일 서버설정` 명령어를 사용해주세요.",
-                                                        inline: false,
-                                                    },
-                                                ],
-                                                footer: { text: `${interaction.guildId}` },
-                                            },
-                                        ],
-                                        components: [],
-                                    });
-                                    return;
-                                }
-                                return;
-                            }
-                            case "thread": {
-                                await ii.deferUpdate();
-                                await Birthdays.findByIdAndUpdate(interaction.user.id, {
-                                    _id: interaction.user.id,
-                                    date: birthday,
-                                    lastModifiedAt: new Date(),
-                                    allowCreateThread: JSON.parse(options[2]),
-                                });
                                 await i.editReply({
                                     embeds: [
                                         {
@@ -651,20 +433,19 @@ module.exports = {
                                             fields: [
                                                 {
                                                     name: "Q. 다른 서버에서도 생일 알림이 전송되나요?",
-                                                    value: "`/생일 등록` 명령어를 사용한 서버에서만 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 `/생일 서버설정` 명령어를 사용해주세요.",
+                                                    value: "`/생일 등록` 명령어를 사용하면 그 서버에서도 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 해당 서버에서 `/생일 서버설정` 명령어를 사용해주세요.",
                                                     inline: false,
                                                 },
                                             ],
-                                            footer: { text: `${interaction.guildId}` },
+                                            footer: { text: "10초만 투자해 봇에 하트를 눌러 추천해주세요!" },
                                         },
                                     ],
-                                    components: [],
+                                    components: [new MessageActionRow().addComponents(new MessageButton().setLabel("추천하기").setStyle("LINK").setEmoji("❤️").setURL(`https://koreanbots.dev/bots/${client.user?.id}/vote`))],
                                 });
                                 return;
                             }
                         }
                     });
-                    return;
                 }
             }
         });
