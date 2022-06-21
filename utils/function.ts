@@ -1,17 +1,58 @@
 import { HexColorString } from "discord.js";
 import Settings from "../models/guild-settings";
+import client from "../bot";
+import { getLocaleString as t } from "../utils/localization";
+import TodayBirthdays from "../models/today-birthdays";
+import mongoose from "mongoose";
 
-export async function saveChannel(guildId: string, channelId: string) {
-    return await Settings.findByIdAndUpdate(
-        guildId,
-        {
-            _id: guildId,
-            channelId: channelId,
-        },
-        { upsert: true }
-    );
+/**
+ * 채널에 축하 메시지를 전송합니다.
+ * @param {string} channelId 생일을 반환할 Date객체
+ * @returns {{ success: Boolean }}
+ */
+export async function sendBirthMessage(birthday: Date, userId: string, guildId: string, channelId: string, roleId: string, allowShowAge: boolean): Promise<{ success: boolean }> {
+    const guild = await client.guilds.fetch(guildId);
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || !channel.isText()) return { success: false };
+    const member = await guild.members.fetch(userId);
+
+    const message = await channel.send({
+        content: "@here",
+        embeds: [
+            {
+                color: "#f5bed1",
+                title: `<:cakeprogress:985470905314603018> 오늘은 ${member.nickname || member.user.username} 님의 ${allowShowAge ? `${getAge(birthday).western}번째 ` : ""}생일이에요!`,
+                description: `<@${member.id}>님의 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?`,
+            },
+        ],
+    });
+    const thread = await message.startThread({
+        name: `${member.nickname || member.user.username}님의 생일`,
+        autoArchiveDuration: 1440,
+        reason: `${member.nickname || member.user.username}님의 생일`,
+    });
+    await thread.members.add(member.id);
+    await thread.send({ content: await t("ko", "celebration_messages", [`<@${member.id}>`]) });
+
+    if (roleId) await member.roles.add(roleId);
+
+    await new TodayBirthdays({
+        userId: member.id,
+        guildId: guildId,
+        threadId: thread.id,
+        messageId: message.id,
+        roleId: roleId,
+        createdAt: new Date(),
+    }).save();
+
+    return { success: true };
 }
 
+/**
+ * 날짜의 생일을 반환합니다.
+ * @param {date} birthday 생일을 반환할 Date객체
+ * @returns {{ korean: number; western: number }}
+ */
 export function getAge(birthday: Date): { korean: number; western: number } {
     const today = new Date();
     const koreanAge = today.getFullYear() - birthday.getFullYear() + 1;
@@ -26,9 +67,23 @@ export function getAge(birthday: Date): { korean: number; western: number } {
     };
 }
 
-// 별자리에 관심도 없고 뭐가 뭔지 모르겠어서 그냥 깃허브 gist에 있는거 따왔습니다.
-// https://github.com/tindoductran/zodiac/blob/master/getZodiac2.html
+/**
+ * 날짜의 다음 생일을 반환합니다.
+ * @param {date} birthday 생일을 반환할 Date객체
+ * @returns {{ rawDate: Date, unix: String }}
+ */
+export function getNextBirthday(birthday: Date): { rawDate: Date; unix: string } {
+    let nextBirthday = new Date(new Date().getFullYear(), birthday.getMonth(), birthday.getDate());
+    if (new Date() == nextBirthday) nextBirthday = new Date();
+    if (new Date() > nextBirthday) nextBirthday = new Date(new Date().getFullYear() + 1, birthday.getMonth(), birthday.getDate());
+    return { rawDate: nextBirthday, unix: Math.floor(nextBirthday.getTime() / 1000).toFixed(0) };
+}
 
+/**
+ * 날짜의 탄생석을 반환합니다.
+ * @param {date} date 탄생석을 반환할 Date객체
+ * @returns {{ name: string; color: HexColorString }}
+ */
 export function getBirthstone(date: Date): { name: string; color: HexColorString } {
     const birthstones: {
         name: string;
@@ -51,6 +106,14 @@ export function getBirthstone(date: Date): { name: string; color: HexColorString
     return birthstones[monthIndx];
 }
 
+// 별자리에 관심도 없고 뭐가 뭔지 모르겠어서 그냥 깃허브 gist에 있는거 따왔습니다.
+// https://github.com/tindoductran/zodiac/blob/master/getZodiac2.html
+
+/**
+ * 날짜의 별자리를 반환합니다. https://github.com/tindoductran/zodiac/blob/master/getZodiac2.html
+ * @param {date} date 별자리를 반환할 Date객체
+ * @returns {{ name: string; color: HexColorString }}
+ */
 export function getZodiac(date: Date): { name: string; color: HexColorString; emoji: string } {
     let signMonthIndex;
     //bound is zero indexed and returns the day of month where the boundary occurs
