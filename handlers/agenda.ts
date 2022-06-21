@@ -13,8 +13,7 @@ module.exports = async (client: Client) => {
     agenda.define("send today birthday", async (job: Job) => {
         const today = new Date();
         today.setHours(today.getHours() + 9);
-        // const birthdays = await Birthdays.find({ month: ("0" + (today.getMonth() + 1)).slice(-2), day: ("0" + today.getDate()).slice(-2)} );
-        const birthdays = await Birthdays.find({ month: 12, day: 3 }).lean();
+        const birthdays = await Birthdays.find({ month: ("0" + (today.getMonth() + 1)).slice(-2), day: ("0" + today.getDate()).slice(-2) });
         console.log(`[오늘 생일] ${birthdays.length} 유저`);
 
         birthdays.forEach((user) => {
@@ -24,8 +23,8 @@ module.exports = async (client: Client) => {
 
                 await sendBirthMessage(user.date, user._id, userGuild._id, guildSetting.channelId, guildSetting.roleId, userGuild.allowShowAge);
 
-                const finishBirthday = await agenda.create("cleaning birthday", { userId: user._id });
-                await finishBirthday.schedule("10 seconds after");
+                const finishBirthday = agenda.create("cleaning birthday", { userId: user._id });
+                finishBirthday.schedule("1 day after");
                 await finishBirthday.save();
             });
         });
@@ -45,7 +44,6 @@ module.exports = async (client: Client) => {
 
     (async function () {
         await agenda.start();
-        await agenda.now("send today birthday", "");
         await agenda.every("0 0 * * *", "send today birthday");
         client.jobs = agenda;
     })();
