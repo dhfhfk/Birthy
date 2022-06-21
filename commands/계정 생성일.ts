@@ -25,7 +25,7 @@ module.exports = {
             description: `🗓️ <@${user.id}>`,
             fields: [
                 {
-                    name: "게정 생성일",
+                    name: "계정 생성일",
                     value: `<t:${Math.floor(user.createdTimestamp / 1000)}:F>`,
                     inline: false,
                 },
