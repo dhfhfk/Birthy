@@ -1,8 +1,8 @@
 module.exports = {
     apps: [
         {
-            name: "Spirit",
-            script: "./index.js",
+            name: "Birthy",
+            script: "./dist/index",
             log_date_format: "YYYY-MM-DDTHH:mm:ss",
         },
     ],
