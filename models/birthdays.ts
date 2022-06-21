@@ -3,24 +3,36 @@ import * as mongoose from "mongoose";
 export interface IBirthdays extends mongoose.Document {
     _id: string;
     date: Date;
+    month: number;
+    day: number;
     roles: [string];
-    guilds: [string];
+    guilds: [
+        {
+            _id: string;
+            allowShowAge: boolean;
+        }
+    ];
     lastModifiedAt: Date;
     modifiedCount: number;
     allowCreateThread: boolean;
-    allowShowAge: boolean;
 }
 
 export const BirthdaysSchema = new mongoose.Schema(
     {
         _id: String,
         date: Date,
+        month: Number,
+        day: Number,
         roles: [String],
-        guilds: [String],
+        guilds: [
+            {
+                _id: String,
+                allowShowAge: Boolean,
+            },
+        ],
         lastModifiedAt: Date,
         modifiedCount: Number,
         allowCreateThread: Boolean,
-        allowShowAge: Boolean,
     },
     { versionKey: false }
 );
