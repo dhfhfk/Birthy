@@ -23,7 +23,7 @@ module.exports = {
         },
         {
             name: "변경",
-            description: "내 생일을 변경해요. (최대 두 번 변경 가능해요)",
+            description: "내 생일을 변경해요. (한 달에 한 번 변경 가능해요)",
             type: "SUB_COMMAND",
         },
         {
@@ -56,6 +56,7 @@ module.exports = {
         // 설정 정보 가져오기
         const guildSetting = await Settings.findById(interaction.guild.id);
         const userData = await Birthdays.findById(interaction.user.id);
+        let change = false;
 
         if (!guildSetting || !guildSetting.isSetup) {
             return await interaction.reply({
@@ -79,6 +80,77 @@ module.exports = {
         }
 
         switch (interaction.options.getSubcommand()) {
+            case "변경": {
+                if (!userData || !userData.date) {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
+                                description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
+                                footer: { text: `${interaction.user.id}` },
+                            },
+                        ],
+                    });
+                }
+                if (userData?.modifiedCount >= 1) {
+                    const remaining = userData.lastModifiedAt;
+                    remaining.setMonth(userData.lastModifiedAt.getMonth() + 1);
+
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 더이상 생일을 변경할 수 없어요.",
+                                description: `<t:${Math.floor(remaining.getTime() / 1000).toFixed(0)}:R> 에 다시 변경할 수 있어요.`,
+                                footer: { text: `${interaction.user.id}` },
+                            },
+                        ],
+                    });
+                }
+                change = true;
+                const today = new Date();
+                await interaction.showModal({
+                    title: "생일 등록",
+                    customId: `${interaction.id}-birthday-change`,
+                    components: [
+                        {
+                            type: 1,
+                            components: [
+                                {
+                                    type: 4,
+                                    customId: "birthday",
+                                    label: `${
+                                        today.getFullYear() +
+                                        (today.getMonth() + 1 > 9 ? (today.getMonth() + 1).toString() : "0" + (today.getMonth() + 1)) +
+                                        (today.getDate() > 9 ? today.getDate().toString() : "0" + today.getDate().toString())
+                                    } 형식으로 입력해주세요.`,
+                                    style: 1,
+                                    min_length: 8,
+                                    max_length: 8,
+                                    placeholder:
+                                        today.getFullYear() +
+                                        (today.getMonth() + 1 > 9 ? (today.getMonth() + 1).toString() : "0" + (today.getMonth() + 1)) +
+                                        (today.getDate() > 9 ? today.getDate().toString() : "0" + today.getDate().toString()),
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ],
+                });
+
+                break;
+            }
             case "공개설정": {
                 if (!userData || !userData.date) {
                     return await interaction.reply({
@@ -92,11 +164,12 @@ module.exports = {
                                 },
                                 title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
                                 description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
-                                footer: { text: `${interaction.guildId}` },
+                                footer: { text: `${interaction.user.id}` },
                             },
                         ],
                     });
                 }
+
                 const userGuildData = userData.guilds.find((guild) => interaction.guildId == guild._id);
                 if (!userGuildData) {
                     return await interaction.reply({
@@ -110,7 +183,7 @@ module.exports = {
                                 },
                                 title: `<:cakeprogress:985470905314603018> 나이가 ${JSON.parse(interaction.options.getString("나이공개", true)) ? "공개" : "비공개"}된 생일 알림을 받도록 설정했어요`,
                                 description: "이미 등록해둔 생일 정보로 생일 알림을 등록했어요.",
-                                footer: { text: `${interaction.guildId}` },
+                                footer: { text: `${interaction.user.id}` },
                             },
                         ],
                     });
@@ -133,7 +206,7 @@ module.exports = {
                                 icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
                             },
                             title: `<:cakeprogress:985470905314603018> 나이가 ${JSON.parse(interaction.options.getString("나이공개", true)) ? "공개" : "비공개"}된 생일 알림을 받도록 설정했어요`,
-                            footer: { text: `${interaction.guildId}` },
+                            footer: { text: `${interaction.user.id}` },
                         },
                     ],
                 });
@@ -151,7 +224,7 @@ module.exports = {
                                 },
                                 title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
                                 description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
-                                footer: { text: `${interaction.guildId}` },
+                                footer: { text: `${interaction.user.id}` },
                             },
                         ],
                     });
@@ -168,7 +241,7 @@ module.exports = {
                                 },
                                 title: "<:cakeprogress00:985470906891632701> 이미 서버에 생일 알림이 등록되어있지 않아요.",
                                 description: "만약 이 서버에서 생일 알림을 받고싶으시다면 `/생일 등록` 명령어를 사용해주세요.",
-                                footer: { text: `${interaction.guildId}` },
+                                footer: { text: `${interaction.user.id}` },
                             },
                         ],
                     });
@@ -188,7 +261,7 @@ module.exports = {
                             },
                             title: "<:cakeprogress00:985470906891632701> 이 서버에서 알림을 받지 않도록 설정했어요",
                             description: "만약 이 서버에서 생일 알림을 받고싶으시다면 `/생일 등록` 명령어를 사용해주세요.",
-                            footer: { text: `${interaction.guildId}` },
+                            footer: { text: `${interaction.user.id}` },
                         },
                     ],
                 });
@@ -206,7 +279,7 @@ module.exports = {
                                 },
                                 title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
                                 description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
-                                footer: { text: `${interaction.guildId}` },
+                                footer: { text: `${interaction.user.id}` },
                             },
                         ],
                     });
@@ -222,7 +295,7 @@ module.exports = {
                             },
                             title: "<:cakeprogress:985470905314603018> 정말 생일 정보를 삭제할까요?",
                             description: "생일 정보가 모든 서버에서 삭제될거예요.",
-                            footer: { text: `${interaction.guildId}` },
+                            footer: { text: `${interaction.user.id}` },
                         },
                     ],
                     components: [
@@ -248,7 +321,7 @@ module.exports = {
                                     },
                                     title: "<:cakeprogress:985470905314603018> 이미 생일이 등록되어있어요!",
                                     description: "만약 생일을 변경하고 싶으시다면 `/생일 변경` 명령어를 사용해주세요.",
-                                    footer: { text: `${interaction.guildId}` },
+                                    footer: { text: `${interaction.user.id}` },
                                 },
                             ],
                         });
@@ -275,7 +348,7 @@ module.exports = {
                                         inline: false,
                                     },
                                 ],
-                                footer: { text: `${interaction.guildId}` },
+                                footer: { text: `${interaction.user.id}` },
                             },
                         ],
                     });
@@ -407,19 +480,38 @@ module.exports = {
                                     await i.editReply({ content: "`/생일 등록` 명령어를 다시 사용해주세요.", embeds: [], components: [] });
                                     return;
                                 }
-                                await Birthdays.findByIdAndUpdate(
-                                    interaction.user.id,
-                                    {
-                                        _id: interaction.user.id,
-                                        lastModifiedAt: new Date(),
-                                        modifiedCount: 0,
-                                        date: birthday,
-                                        month: ("0" + (birthday.getMonth() + 1)).slice(-2),
-                                        day: ("0" + birthday.getDate()).slice(-2),
-                                        $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
-                                    },
-                                    { upsert: true }
-                                );
+                                if (change) {
+                                    await Birthdays.findByIdAndUpdate(
+                                        interaction.user.id,
+                                        {
+                                            _id: interaction.user.id,
+                                            lastModifiedAt: new Date(),
+                                            $inc: { modifiedCount: 1 },
+                                            date: birthday,
+                                            month: ("0" + (birthday.getMonth() + 1)).slice(-2),
+                                            day: ("0" + birthday.getDate()).slice(-2),
+                                        },
+                                        { upsert: true }
+                                    );
+                                    const decModifiedCount = client.jobs.create("dec modifiedCount", { userId: interaction.user.id });
+                                    decModifiedCount.schedule("1 month after");
+                                    await decModifiedCount.save();
+                                } else {
+                                    await Birthdays.findByIdAndUpdate(
+                                        interaction.user.id,
+                                        {
+                                            _id: interaction.user.id,
+                                            lastModifiedAt: new Date(),
+                                            modifiedCount: 0,
+                                            date: birthday,
+                                            month: ("0" + (birthday.getMonth() + 1)).slice(-2),
+                                            day: ("0" + birthday.getDate()).slice(-2),
+                                            $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
+                                        },
+                                        { upsert: true }
+                                    );
+                                }
+                                await ii.deferUpdate();
                                 await i.editReply({
                                     embeds: [
                                         {

@@ -42,6 +42,16 @@ module.exports = async (client: Client) => {
         return;
     });
 
+    agenda.define("dec modifiedCount", async (job: Job) => {
+        const birthday = await Birthdays.findOne({ userId: job.attrs.data?.userId });
+        if (!birthday) return;
+        await birthday.update({
+            modifiedCount: 0,
+            lastModifiedAt: new Date(),
+        });
+        return;
+    });
+
     (async function () {
         await agenda.start();
         await agenda.every("0 0 * * *", "send today birthday");
