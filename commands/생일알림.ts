@@ -599,9 +599,24 @@ module.exports = {
                             await i.deferUpdate();
                             createRole = JSON.parse(options[2]);
                             if (createChannel) {
-                                channel = await interaction.guild.channels.create("🎂", {
-                                    type: "GUILD_TEXT",
-                                });
+                                try {
+                                    channel = await interaction.guild.channels.create("🎂", {
+                                        type: "GUILD_TEXT",
+                                    });
+                                } catch (e) {
+                                    await interaction.editReply({
+                                        embeds: [
+                                            {
+                                                color: "#f56969",
+                                                title: "<:xbold:985419129316065320> 채널을 생성하던 중 오류가 발생했어요",
+                                                description: String(e),
+                                                footer: { text: interaction.guild.id },
+                                            },
+                                        ],
+                                        components: [],
+                                    });
+                                    return;
+                                }
                             }
                             // 생일 역할 만들기
                             if (createRole) {
@@ -655,11 +670,11 @@ module.exports = {
                                                 value: role ? `<@&${role.id}>` : "사용하지 않음",
                                                 inline: false,
                                             },
-                                            {
-                                                name: "\u200B",
-                                                value: "`/생일알림 공지전송` 명령어를 통해 등록 가이드를 전송할 수 있어요.",
-                                                inline: false,
-                                            },
+                                            // {
+                                            //     name: "\u200B",
+                                            //     value: "`/생일알림 공지전송` 명령어를 통해 등록 가이드를 전송할 수 있어요.",
+                                            //     inline: false,
+                                            // },
                                         ],
                                         footer: { text: interaction.guild.id },
                                     },
