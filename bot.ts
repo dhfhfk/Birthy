@@ -6,7 +6,7 @@ const client = new Client({
 });
 
 // 핸들러 불러오기
-["events", "slashCommands", "mongo", "localization", "agenda"].forEach((handler) => {
+["events", "slashCommands", "mongo", "localization", "agenda", "koreanbots"].forEach((handler) => {
     try {
         require(`./handlers/${handler}`)(client);
     } catch (e) {
