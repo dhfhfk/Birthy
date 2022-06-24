@@ -4,6 +4,8 @@ export interface Config {
     token: string;
     mongodb_uri: string;
     languages: string[];
+    dev_guilds: string[];
+    dev_users: string[];
     koreanbots_token: string;
 }
 
@@ -11,5 +13,7 @@ export default {
     token: "discord-bot-Token",
     mongodb_uri: "mongodb://localhost:27017/discordBot",
     languages: ["ko", "en-US"],
+    dev_guilds: ["000000000000000000"];
+    dev_users: ["000000000000000000"];
     koreanbots_token: "",
 } as Config;
