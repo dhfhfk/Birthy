@@ -1,6 +1,7 @@
 import { Interaction } from "discord.js";
 import client from "../bot";
 import Settings from "../models/guild-settings";
+import config from "../config";
 import { getLocaleString as t } from "../utils/localization";
 
 client.on("interactionCreate", async (interaction: Interaction) => {
@@ -24,6 +25,12 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         },
                     ],
                 });
+            }
+            if (command.dev) {
+                if (!config.dev_users) return;
+                if (!config.dev_users.includes(interaction.user.id)) {
+                    return await interaction.reply({ content: "개발자가 아닙니다. 이 명령어를 사용할 수 없습니다." });
+                }
             }
             command.run(client, interaction, interaction.locale);
         });
