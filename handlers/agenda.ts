@@ -15,19 +15,22 @@ module.exports = async (client: Client) => {
         today.setHours(today.getHours() + 9);
         const birthdays = await Birthdays.find({ month: ("0" + (today.getMonth() + 1)).slice(-2), day: ("0" + today.getDate()).slice(-2) });
         console.log(`[오늘 생일] ${birthdays.length} 유저`);
+        try {
+            birthdays.forEach((user) => {
+                user.guilds.forEach(async (userGuild) => {
+                    const guildSetting = await Settings.findById(userGuild._id);
+                    if (!guildSetting) return;
 
-        birthdays.forEach((user) => {
-            user.guilds.forEach(async (userGuild) => {
-                const guildSetting = await Settings.findById(userGuild._id);
-                if (!guildSetting) return;
+                    await sendBirthMessage(user.date, user._id, userGuild._id, guildSetting.channelId, guildSetting.roleId, userGuild.allowShowAge);
 
-                await sendBirthMessage(user.date, user._id, userGuild._id, guildSetting.channelId, guildSetting.roleId, userGuild.allowShowAge);
-
-                const finishBirthday = agenda.create("cleaning birthday", { userId: user._id });
-                finishBirthday.schedule("1 day after");
-                await finishBirthday.save();
+                    const finishBirthday = agenda.create("cleaning birthday", { userId: user._id });
+                    finishBirthday.schedule("1 day after");
+                    await finishBirthday.save();
+                });
             });
-        });
+        } catch (e) {
+            console.warn(e);
+        }
         return;
     });
     agenda.define("cleaning birthday", async (job: Job) => {
