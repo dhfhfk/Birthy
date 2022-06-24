@@ -620,7 +620,13 @@ module.exports = {
                             }
                             // 생일 역할 만들기
                             if (createRole) {
-                                if (settingData?.roleId) await interaction.guild.roles.delete(settingData.roleId, "무결성을 위해 삭제");
+                                if (settingData?.roleId) {
+                                    try {
+                                        await interaction.guild.roles.delete(settingData.roleId, "무결성을 위해 삭제");
+                                    } catch (e) {
+                                        //
+                                    }
+                                }
 
                                 try {
                                     // 가능하다면 가장 높은 위치로
@@ -632,14 +638,7 @@ module.exports = {
                                         hoist: true,
                                     });
                                 } catch {
-                                    // 높은 위치로 설정 실패 시
-                                    if (!role)
-                                        role = await interaction.guild.roles.create({
-                                            name: "🎂오늘 생일",
-                                            permissions: [],
-                                            color: "#f5bed1",
-                                            hoist: true,
-                                        });
+                                    //
                                 }
                             }
                             await Settings.findByIdAndUpdate(
