@@ -493,7 +493,7 @@ module.exports = {
                                         },
                                         { upsert: true }
                                     );
-                                    const decModifiedCount = client.jobs.create("dec modifiedCount", { userId: interaction.user.id });
+                                    const decModifiedCount = client.agenda.create("dec modifiedCount", { userId: interaction.user.id });
                                     decModifiedCount.schedule("1 month after");
                                     await decModifiedCount.save();
                                 } else {

@@ -58,6 +58,6 @@ module.exports = async (client: Client) => {
     (async function () {
         await agenda.start();
         await agenda.every("0 0 * * *", "send today birthday");
-        client.jobs = agenda;
+        client.agenda = agenda;
     })();
 };
