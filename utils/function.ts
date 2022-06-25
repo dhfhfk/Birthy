@@ -56,7 +56,7 @@ export async function sendBirthMessage(birthday: Date, userId: string, guildId: 
 export function getAge(birthday: Date): { korean: number; western: number } {
     const today = new Date();
     const koreanAge = today.getFullYear() - birthday.getFullYear() + 1;
-    let westernAge = koreanAge;
+    let westernAge = today.getFullYear() - birthday.getFullYear();
     const m = today.getMonth() - birthday.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthday.getDate())) {
         westernAge--;
