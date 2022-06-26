@@ -52,10 +52,6 @@ export async function sendBirthMessage(userId: string): Promise<{ success: boole
             messageId: message.id,
             roleId: guildSetting.roleId,
         }).save();
-
-        const finishBirthday = client.agenda.create("cleaning birthday", { userId: userId });
-        finishBirthday.schedule("30 seconds after");
-        await finishBirthday.save();
     });
     return { success: true };
 }
