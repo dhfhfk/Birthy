@@ -1,50 +1,62 @@
 import { HexColorString } from "discord.js";
 import Settings from "../models/guild-settings";
+import Birthdays from "../models/birthdays";
 import client from "../bot";
 import { getLocaleString as t } from "../utils/localization";
 import TodayBirthdays from "../models/today-birthdays";
 import mongoose from "mongoose";
 
 /**
- * 채널에 축하 메시지를 전송합니다.
- * @param {string} channelId 생일을 반환할 Date객체
- * @returns {{ success: Boolean }}
+ * 채널에 축하 메시지를 전송하고 스레드를 생성합니다.
+ * @param {string} userId 유저 Id
+ * @returns 성공 여부
  */
-export async function sendBirthMessage(birthday: Date, userId: string, guildId: string, channelId: string, roleId: string, allowShowAge: boolean): Promise<{ success: boolean }> {
-    const guild = await client.guilds.fetch(guildId);
-    const channel = await client.channels.fetch(channelId);
-    if (!channel || !channel.isText()) return { success: false };
-    const member = await guild.members.fetch(userId);
+export async function sendBirthMessage(userId: string): Promise<{ success: boolean; message?: string }> {
+    const birthday = await Birthdays.findById(userId);
 
-    const message = await channel.send({
-        content: "@here",
-        embeds: [
-            {
-                color: "#f5bed1",
-                title: `<:cakeprogress:985470905314603018> 오늘은 ${member.nickname || member.user.username} 님의 ${allowShowAge ? `${getAge(birthday).western}번째 ` : ""}생일이에요!`,
-                description: `<@${member.id}>님의 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?`,
-            },
-        ],
+    // 유저가 등록한 모든 길드 forEach
+    birthday?.guilds.forEach(async (userGuild) => {
+        const guildSetting = await Settings.findById(userGuild._id);
+        if (!guildSetting) return { success: false, message: "길드 설정을 찾을 수 없음" };
+
+        const guild = await client.guilds.fetch(guildSetting._id);
+        const member = await guild.members.fetch(userId);
+        const channel = await client.channels.fetch(guildSetting.channelId);
+        if (!channel || !channel.isText()) return { success: false, message: "채널을 찾을 수 없음" };
+
+        const message = await channel.send({
+            content: "@here",
+            embeds: [
+                {
+                    color: "#f5bed1",
+                    title: `<:cakeprogress:985470905314603018> 오늘은 ${member.nickname || member.user.username} 님의 ${userGuild.allowShowAge ? `${getAge(birthday.date).western}번째 ` : ""}생일이에요!`,
+                    description: `<@${member.id}>님의 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?`,
+                },
+            ],
+        });
+
+        const thread = await message.startThread({
+            name: `${member.nickname || member.user.username}님의 생일`,
+            autoArchiveDuration: 1440,
+            reason: `${member.nickname || member.user.username}님의 생일`,
+        });
+        await thread.members.add(member.id);
+        await thread.send({ content: await t("ko", "celebration_messages", [`<@${member.id}>`]) });
+
+        if (guildSetting.roleId) await member.roles.add(guildSetting.roleId);
+
+        await new TodayBirthdays({
+            userId: member.id,
+            guildId: guild.id,
+            threadId: thread.id,
+            messageId: message.id,
+            roleId: guildSetting.roleId,
+        }).save();
+
+        const finishBirthday = client.agenda.create("cleaning birthday", { userId: userId });
+        finishBirthday.schedule("30 seconds after");
+        await finishBirthday.save();
     });
-    const thread = await message.startThread({
-        name: `${member.nickname || member.user.username}님의 생일`,
-        autoArchiveDuration: 1440,
-        reason: `${member.nickname || member.user.username}님의 생일`,
-    });
-    await thread.members.add(member.id);
-    await thread.send({ content: await t("ko", "celebration_messages", [`<@${member.id}>`]) });
-
-    if (roleId) await member.roles.add(roleId);
-
-    await new TodayBirthdays({
-        userId: member.id,
-        guildId: guildId,
-        threadId: thread.id,
-        messageId: message.id,
-        roleId: roleId,
-        createdAt: new Date(),
-    }).save();
-
     return { success: true };
 }
 

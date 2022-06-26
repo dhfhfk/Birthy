@@ -30,21 +30,44 @@ module.exports = {
 
         today.setHours(today.getHours() + 9);
         const birthdays = await Birthdays.find({ month: month, day: day });
-        await interaction.followUp({ content: `[${("0" + month).slice(-2)}월  ${("0" + day).slice(-2)}일] ${birthdays.length} 유저 찾음` });
 
-        birthdays.forEach((user) => {
-            user.guilds.forEach(async (userGuild) => {
-                const guildSetting = await Settings.findById(userGuild._id);
-                if (!guildSetting) return;
+        if (birthdays.length <= 0) return await interaction.editReply({ content: `[${("0" + month).slice(-2)}월  ${("0" + day).slice(-2)}일] 결과 없음` });
 
-                await sendBirthMessage(user.date, user._id, userGuild._id, guildSetting.channelId, guildSetting.roleId, userGuild.allowShowAge);
-
-                const finishBirthday = client.agenda.create("cleaning birthday", { userId: user._id });
-                finishBirthday.schedule("30 seconds after");
-                await finishBirthday.save();
-            });
+        const users = birthdays.map((b) => {
+            return `${b._id}`;
         });
-        await interaction.editReply({ content: "전송 완료, `30초` 후 테스트 종료 스케줄 등록됨" });
-        return;
+        await interaction.editReply({
+            content: `[${("0" + month).slice(-2)}월  ${("0" + day).slice(-2)}일] ${birthdays.length} 유저
+${users ? users.join(", ") : ""}`,
+            components: [
+                new MessageActionRow().addComponents(
+                    new MessageButton().setCustomId(`${interaction.id}-test-false`).setLabel("취소").setStyle("SECONDARY"),
+                    new MessageButton().setCustomId(`${interaction.id}-test-true`).setLabel("전송").setStyle("PRIMARY").setEmoji("<:cakeprogress:985470905314603018>")
+                ),
+            ],
+        });
+
+        const filter = (i: MessageComponentInteraction) => i.customId.startsWith(interaction.id);
+
+        const collector = interaction.channel?.createMessageComponentCollector({ filter, time: 300000 });
+        collector?.on("collect", async (i: MessageComponentInteraction) => {
+            const options = i.customId.split("-");
+            if (!options[0].startsWith(interaction.id)) return;
+
+            if (!JSON.parse(options[2])) {
+                await interaction.editReply({ content: "취소됨", components: [] });
+                return;
+            }
+            await interaction.editReply({ content: "전송 중...", components: [] });
+
+            const results = await Promise.all(
+                birthdays.map(async (user) => {
+                    const result = await sendBirthMessage(user._id);
+                    return result.success ? "성공" : `실패, ${result.message}`;
+                })
+            );
+            await interaction.editReply({ content: `전송 완료, \`30초\` 후 테스트 종료 스케줄 등록됨\n${results.join("\n")}` });
+            return;
+        });
     },
 };

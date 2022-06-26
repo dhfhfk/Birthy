@@ -687,31 +687,5 @@ module.exports = {
                 });
             }
         }
-
-        // client.on("interactionCreate", async (i: Interaction) => {
-        //     if (!i.isModalSubmit()) return;
-        //     if (!i.customId.startsWith(interaction.id)) return;
-        //     const options = i.customId.split("-");
-        //     switch (options[1]) {
-        //         case "channel": {
-        //             return;
-        //         }
-        //         case "role": {
-        //             await i.deferUpdate();
-        //             return;
-        //         }
-        //     }
-        // });
-
-        // const message = await channel.send({ content: "@here 오늘은 테스트님의 생일이에요! 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?" });
-        // const thread = await message.startThread({
-        //     name: "테스트님의 생일",
-        //     autoArchiveDuration: 1440,
-        //     reason: "테스트님의 생일",
-        // });
-        // await thread.members.add("868814766225887232");
-        // await thread.send({ content: "테스트님 생일 축하드려요!🎉 즐겁고 행복한 하루 보내시길 바라요!" });
-
-        // console.log(`Created thread: ${thread.name}`);
     },
 };
