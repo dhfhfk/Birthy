@@ -169,7 +169,43 @@ module.exports = {
                         ],
                     });
                 }
-
+                if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
+                                description: "아래 이미지를 참조해 다시 시도해주세요.",
+                                image: {
+                                    url: "https://i.ibb.co/FKVDJwX/allow-Show-Age-typing-error.png",
+                                },
+                                footer: { text: `${interaction.user.id}` },
+                            },
+                        ],
+                    });
+                }
+                if (!guildSetting.allowHideAge && interaction.options.getString("나이공개", true) != "false") {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
+                                description: "이 서버에서는 나이를 비공개할 수 없어요.",
+                                footer: { text: `${interaction.user.id}` },
+                            },
+                        ],
+                    });
+                }
                 const userGuildData = userData.guilds.find((guild) => interaction.guildId == guild._id);
                 if (!userGuildData) {
                     return await interaction.reply({
@@ -497,6 +533,27 @@ module.exports = {
                                     decModifiedCount.schedule("1 month after");
                                     await decModifiedCount.save();
                                 } else {
+                                    await ii.deferUpdate();
+                                    if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
+                                        return await i.reply({
+                                            ephemeral: true,
+                                            embeds: [
+                                                {
+                                                    color: "#f56969",
+                                                    author: {
+                                                        name: interaction.member.nickname || interaction.user.username,
+                                                        icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                                    },
+                                                    title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
+                                                    description: "아래 이미지를 참조해 다시 시도해주세요.",
+                                                    image: {
+                                                        url: "https://i.ibb.co/FKVDJwX/allow-Show-Age-typing-error.png",
+                                                    },
+                                                    footer: { text: `${interaction.user.id}` },
+                                                },
+                                            ],
+                                        });
+                                    }
                                     await Birthdays.findByIdAndUpdate(
                                         interaction.user.id,
                                         {
@@ -511,7 +568,6 @@ module.exports = {
                                         { upsert: true }
                                     );
                                 }
-                                await ii.deferUpdate();
                                 await i.editReply({
                                     embeds: [
                                         {
@@ -541,16 +597,5 @@ module.exports = {
                 }
             }
         });
-
-        // const message = await channel.send({ content: "@here 오늘은 테스트님의 생일이에요! 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?" });
-        // const thread = await message.startThread({
-        //     name: "테스트님의 생일",
-        //     autoArchiveDuration: 1440,
-        //     reason: "테스트님의 생일",
-        // });
-        // await threatoday.members.add("868814766225887232");
-        // await threatoday.send({ content: "테스트님 생일 축하드려요!🎉 즐겁고 행복한 하루 보내시길 바라요!" });
-
-        // console.log(`Created thread: ${threatoday.name}`);
     },
 };
