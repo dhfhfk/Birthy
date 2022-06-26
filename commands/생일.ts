@@ -284,7 +284,10 @@ module.exports = {
                 }
                 await Birthdays.findByIdAndUpdate(interaction.user.id, {
                     _id: interaction.user.id,
-                    $pull: { guilds: { _id: interaction.guildId } },
+                    $addToSet: { guilds: { _id: interaction.guildId } },
+                });
+                await Settings.findByIdAndUpdate(interaction.guildId, {
+                    $addToSet: { members: interaction.user.id },
                 });
                 return await interaction.reply({
                     ephemeral: true,
@@ -366,6 +369,9 @@ module.exports = {
                         _id: interaction.user.id,
                         $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
                     });
+                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                        $push: { members: interaction.user.id },
+                    });
                     return await interaction.reply({
                         ephemeral: true,
                         embeds: [
@@ -440,6 +446,9 @@ module.exports = {
                     }
                     await Birthdays.findByIdAndUpdate(interaction.user.id, {
                         $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1 },
+                    });
+                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                        $addToSet: { members: interaction.user.id },
                     });
                     await interaction.editReply({ content: "생일 삭제를 완료했습니다.", embeds: [], components: [] });
                     return;
@@ -567,6 +576,9 @@ module.exports = {
                                         },
                                         { upsert: true }
                                     );
+                                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                                        $push: { members: interaction.user.id },
+                                    });
                                 }
                                 await i.editReply({
                                     embeds: [

@@ -18,10 +18,7 @@ module.exports = async (client: Client) => {
         try {
             birthdays.forEach((user) => {
                 user.guilds.forEach(async (userGuild) => {
-                    const guildSetting = await Settings.findById(userGuild._id);
-                    if (!guildSetting) return;
-
-                    await sendBirthMessage(user.date, user._id, userGuild._id, guildSetting.channelId, guildSetting.roleId, userGuild.allowShowAge);
+                    await sendBirthMessage(user._id);
 
                     const finishBirthday = agenda.create("cleaning birthday", { userId: user._id });
                     finishBirthday.schedule("1 day after");

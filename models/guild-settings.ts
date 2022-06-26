@@ -3,6 +3,7 @@ import * as mongoose from "mongoose";
 export interface ISettings extends mongoose.Document {
     _id: string;
     isSetup: boolean;
+    members: string[];
     channelId: string;
     roleId: string;
     subRole: boolean;
@@ -18,6 +19,7 @@ export const SettingsSchema = new mongoose.Schema(
     {
         _id: String,
         isSetup: Boolean,
+        members: [String],
         channelId: String,
         roleId: String,
         subRole: Boolean,

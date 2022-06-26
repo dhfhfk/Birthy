@@ -16,9 +16,8 @@ export const TodayBirthdaysSchema = new mongoose.Schema(
         threadId: String,
         messageId: String,
         roleId: String,
-        createdAt: Date,
     },
-    { versionKey: false }
+    { versionKey: false, timestamps: true }
 );
 
 const TodayBirthdays = mongoose.model<ITodayBirthdays>("today_birthdays", TodayBirthdaysSchema);
