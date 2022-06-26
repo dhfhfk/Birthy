@@ -248,7 +248,10 @@ module.exports = {
                 }
                 await Birthdays.findByIdAndUpdate(interaction.user.id, {
                     _id: interaction.user.id,
-                    $pull: { guilds: { _id: interaction.guildId } },
+                    $addToSet: { guilds: { _id: interaction.guildId } },
+                });
+                await Settings.findByIdAndUpdate(interaction.guildId, {
+                    $addToSet: { members: interaction.user.id },
                 });
                 return await interaction.reply({
                     ephemeral: true,
@@ -330,6 +333,9 @@ module.exports = {
                         _id: interaction.user.id,
                         $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
                     });
+                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                        $push: { members: interaction.user.id },
+                    });
                     return await interaction.reply({
                         ephemeral: true,
                         embeds: [
@@ -404,6 +410,9 @@ module.exports = {
                     }
                     await Birthdays.findByIdAndUpdate(interaction.user.id, {
                         $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1 },
+                    });
+                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                        $addToSet: { members: interaction.user.id },
                     });
                     await interaction.editReply({ content: "생일 삭제를 완료했습니다.", embeds: [], components: [] });
                     return;
@@ -510,6 +519,9 @@ module.exports = {
                                         },
                                         { upsert: true }
                                     );
+                                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                                        $push: { members: interaction.user.id },
+                                    });
                                 }
                                 await ii.deferUpdate();
                                 await i.editReply({
@@ -541,16 +553,5 @@ module.exports = {
                 }
             }
         });
-
-        // const message = await channel.send({ content: "@here 오늘은 테스트님의 생일이에요! 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?" });
-        // const thread = await message.startThread({
-        //     name: "테스트님의 생일",
-        //     autoArchiveDuration: 1440,
-        //     reason: "테스트님의 생일",
-        // });
-        // await threatoday.members.add("868814766225887232");
-        // await threatoday.send({ content: "테스트님 생일 축하드려요!🎉 즐겁고 행복한 하루 보내시길 바라요!" });
-
-        // console.log(`Created thread: ${threatoday.name}`);
     },
 };
