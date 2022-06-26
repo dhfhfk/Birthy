@@ -284,10 +284,10 @@ module.exports = {
                 }
                 await Birthdays.findByIdAndUpdate(interaction.user.id, {
                     _id: interaction.user.id,
-                    $addToSet: { guilds: { _id: interaction.guildId } },
+                    $pull: { guilds: { _id: interaction.guildId } },
                 });
                 await Settings.findByIdAndUpdate(interaction.guildId, {
-                    $addToSet: { members: interaction.user.id },
+                    $pull: { members: interaction.user.id },
                 });
                 return await interaction.reply({
                     ephemeral: true,
@@ -347,6 +347,26 @@ module.exports = {
                 break;
             }
             case "등록": {
+                if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
+                                description: "아래 이미지를 참조해 다시 시도해주세요.",
+                                image: {
+                                    url: "https://i.ibb.co/FKVDJwX/allow-Show-Age-typing-error.png",
+                                },
+                                footer: { text: `${interaction.user.id}` },
+                            },
+                        ],
+                    });
+                }
                 if (userData && userData.date) {
                     if (userData.guilds.find((guild) => interaction.guildId == guild._id)) {
                         return await interaction.reply({
@@ -367,10 +387,10 @@ module.exports = {
                     }
                     await Birthdays.findByIdAndUpdate(interaction.user.id, {
                         _id: interaction.user.id,
-                        $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
+                        $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
                     });
                     await Settings.findByIdAndUpdate(interaction.guildId, {
-                        $push: { members: interaction.user.id },
+                        $addToSet: { members: interaction.user.id },
                     });
                     return await interaction.reply({
                         ephemeral: true,
@@ -448,7 +468,7 @@ module.exports = {
                         $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1 },
                     });
                     await Settings.findByIdAndUpdate(interaction.guildId, {
-                        $addToSet: { members: interaction.user.id },
+                        $pull: { members: interaction.user.id },
                     });
                     await interaction.editReply({ content: "생일 삭제를 완료했습니다.", embeds: [], components: [] });
                     return;
@@ -572,12 +592,12 @@ module.exports = {
                                             date: birthday,
                                             month: ("0" + (birthday.getMonth() + 1)).slice(-2),
                                             day: ("0" + birthday.getDate()).slice(-2),
-                                            $push: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
+                                            $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
                                         },
                                         { upsert: true }
                                     );
                                     await Settings.findByIdAndUpdate(interaction.guildId, {
-                                        $push: { members: interaction.user.id },
+                                        $addToSet: { members: interaction.user.id },
                                     });
                                 }
                                 await i.editReply({
