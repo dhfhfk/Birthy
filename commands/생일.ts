@@ -1,7 +1,8 @@
-import { Client, Interaction, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton } from "discord.js";
+import { Client, Interaction, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton, MessageEmbedOptions, EmbedFieldData } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import { getLocaleString as t } from "../utils/localization";
+import { getAge, getBirthstone, getNextBirthday, getZodiac } from "../utils/function";
 
 module.exports = {
     name: "생일",
@@ -32,13 +33,18 @@ module.exports = {
             type: "SUB_COMMAND",
         },
         {
-            name: "서버",
-            description: "이 서버에서 생일 알림을 받지 않도록 설정해요.",
+            name: "서버설정",
+            description: "이 서버에서 생일을 확인할 수 없도록 설정해요.",
             type: "SUB_COMMAND",
         },
+        // {
+        //     name: "알림설정",
+        //     description: "생일은 공개하되 메시지 알림은 받지 않도록 토글해요.",
+        //     type: "SUB_COMMAND",
+        // },
         {
-            name: "공개설정",
-            description: "이 서버에서 생일을 공개할지 설정해요.",
+            name: "나이공개",
+            description: "이 서버에서 나이를 공개할지 설정해요.",
             type: "SUB_COMMAND",
             options: [
                 {
@@ -80,6 +86,40 @@ module.exports = {
         }
 
         switch (interaction.options.getSubcommand()) {
+            case "알림설정": {
+                if (!userData || !userData.date) {
+                    return await interaction.reply({
+                        ephemeral: true,
+                        embeds: [
+                            {
+                                color: "#f56969",
+                                author: {
+                                    name: interaction.member.nickname || interaction.user.username,
+                                    icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                                },
+                                title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
+                                description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
+                                footer: { text: `${interaction.user.id}` },
+                            },
+                        ],
+                    });
+                }
+                await userData.update({ allowCreateNotifi: !userData.allowCreateNotifi });
+                await interaction.reply({
+                    embeds: [
+                        {
+                            color: "#f5bed1",
+                            author: {
+                                name: interaction.member.nickname || interaction.user.username,
+                                icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
+                            },
+                            title: `<:cakeprogress:985470905314603018> 나이가 ${JSON.parse(interaction.options.getString("나이공개", true)) ? "공개" : "비공개"}된 생일 알림을 받도록 설정했어요`,
+                            footer: { text: `${interaction.user.id}` },
+                        },
+                    ],
+                });
+                return;
+            }
             case "변경": {
                 if (!userData || !userData.date) {
                     return await interaction.reply({
@@ -151,7 +191,7 @@ module.exports = {
 
                 break;
             }
-            case "공개설정": {
+            case "나이공개": {
                 if (!userData || !userData.date) {
                     return await interaction.reply({
                         ephemeral: true,
@@ -247,7 +287,7 @@ module.exports = {
                     ],
                 });
             }
-            case "서버": {
+            case "서버설정": {
                 if (!userData || !userData.date) {
                     return await interaction.reply({
                         ephemeral: true,
@@ -465,7 +505,7 @@ module.exports = {
                         //
                     }
                     await Birthdays.findByIdAndUpdate(interaction.user.id, {
-                        $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1 },
+                        $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1, allowCreateNotifi: 1 },
                     });
                     await Settings.findByIdAndUpdate(interaction.guildId, {
                         $pull: { members: interaction.user.id },
@@ -562,7 +602,6 @@ module.exports = {
                                     decModifiedCount.schedule("1 month after");
                                     await decModifiedCount.save();
                                 } else {
-                                    await ii.deferUpdate();
                                     if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
                                         return await i.reply({
                                             ephemeral: true,
@@ -600,6 +639,7 @@ module.exports = {
                                         $addToSet: { members: interaction.user.id },
                                     });
                                 }
+                                await ii.deferUpdate();
                                 await i.editReply({
                                     embeds: [
                                         {
@@ -622,6 +662,10 @@ module.exports = {
                                     ],
                                     components: [new MessageActionRow().addComponents(new MessageButton().setLabel("추천하기").setStyle("LINK").setEmoji("❤️").setURL(`https://koreanbots.dev/bots/${client.user?.id}/vote`))],
                                 });
+                                if (birthday > new Date() || new Date().getFullYear() - birthday.getFullYear() > 100) {
+                                    await i.followUp({ ephemeral: true, content: "연도가 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
+                                    return;
+                                }
                                 return;
                             }
                         }
