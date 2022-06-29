@@ -517,7 +517,7 @@ module.exports = {
                     if (!i.isModalSubmit()) return;
                     const rawDate = i.fields.getTextInputValue("birthday");
                     const year = Number(rawDate.substring(0, 4));
-                    if (year > new Date().getFullYear()) {
+                    if (isNaN(year) || year > new Date().getFullYear()) {
                         return await i.reply({
                             ephemeral: true,
                             embeds: [
@@ -527,8 +527,7 @@ module.exports = {
                                         name: interaction.member.nickname || interaction.user.username,
                                         icon_url: interaction.user.displayAvatarURL({ dynamic: true }),
                                     },
-                                    title: "<:xbold:985419129316065320> 뭔가 이상하네요...",
-                                    description: "실수로 잘못 입력하신거죠?",
+                                    title: "<:xbold:985419129316065320> 날짜가 잘못 입력되었어요",
                                     fields: [
                                         {
                                             name: "해결법",
