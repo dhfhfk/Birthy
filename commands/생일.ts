@@ -222,7 +222,7 @@ module.exports = {
                                 title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
                                 description: "아래 이미지를 참조해 다시 시도해주세요.",
                                 image: {
-                                    url: "https://i.ibb.co/FKVDJwX/allow-Show-Age-typing-error.png",
+                                    url: "https://i.ibb.co/rdpGVVZ/2-allow-Show-Age-typing.png",
                                 },
                                 footer: { text: `${interaction.user.id}` },
                             },
@@ -400,7 +400,7 @@ module.exports = {
                                 title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
                                 description: "아래 이미지를 참조해 다시 시도해주세요.",
                                 image: {
-                                    url: "https://i.ibb.co/FKVDJwX/allow-Show-Age-typing-error.png",
+                                    url: "https://i.ibb.co/rdpGVVZ/2-allow-Show-Age-typing.png",
                                 },
                                 footer: { text: `${interaction.user.id}` },
                             },
@@ -614,7 +614,7 @@ module.exports = {
                                                     title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
                                                     description: "아래 이미지를 참조해 다시 시도해주세요.",
                                                     image: {
-                                                        url: "https://i.ibb.co/FKVDJwX/allow-Show-Age-typing-error.png",
+                                                        url: "https://i.ibb.co/rdpGVVZ/2-allow-Show-Age-typing.png",
                                                     },
                                                     footer: { text: `${interaction.user.id}` },
                                                 },
