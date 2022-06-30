@@ -14,7 +14,7 @@ export interface IBirthdays extends mongoose.Document {
     ];
     lastModifiedAt: Date;
     modifiedCount: number;
-    allowCreateThread: boolean;
+    allowCreateNotifi: boolean;
 }
 
 export const BirthdaysSchema = new mongoose.Schema(
@@ -32,7 +32,7 @@ export const BirthdaysSchema = new mongoose.Schema(
         ],
         lastModifiedAt: Date,
         modifiedCount: Number,
-        allowCreateThread: Boolean,
+        allowCreateNotifi: Boolean,
     },
     { versionKey: false }
 );
