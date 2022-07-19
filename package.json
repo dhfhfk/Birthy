@@ -15,7 +15,7 @@
     },
     "license": "MIT",
     "engines": {
-        "node": ">=16.6.0"
+        "node": ">=16.9.0"
     },
     "dependencies": {
         "agenda": "^4.3.0",
