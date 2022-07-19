@@ -6,7 +6,7 @@ client.on("messageCreate", async (message: Message) => {
     if (message.author.bot || message.system) return;
     if (message.content.match(`^(<@!?${client.user?.id}>)\\s*`)) {
         if (!(await Settings.findById(message.guildId))) {
-            if (message.member?.permissions.has("ADMINISTRATOR")) {
+            if (message.member?.permissions.has("Administrator")) {
                 await message.reply({ content: "저를 사용하시려면 먼저 `빗금 명령어`로 생일 알림 셋업을 진행해야해요! 아래 이미지를 참조해주세요.", files: ["https://i.ibb.co/p2XfF2g/slash-commands-administrator.png"] });
                 return;
             } else {

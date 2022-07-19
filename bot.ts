@@ -1,8 +1,8 @@
-import { Client, Intents } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import config from "./config";
 
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+    intents: [GatewayIntentBits.Guilds],
 });
 
 // 핸들러 불러오기

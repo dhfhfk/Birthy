@@ -1,7 +1,5 @@
-import { Client, Interaction, CommandInteraction, MessageComponentInteraction, MessageActionRow, MessageButton } from "discord.js";
-import Settings from "../models/guild-settings";
+import { Client, CommandInteraction, MessageComponentInteraction, ApplicationCommandOptionType } from "discord.js";
 import Birthdays, { IBirthdays } from "../models/birthdays";
-import { getLocaleString as t } from "../utils/localization";
 import { sendBirthMessage } from "../utils/function";
 
 module.exports = {
@@ -12,18 +10,18 @@ module.exports = {
         {
             name: "날짜",
             description: "날짜로 찾기",
-            type: "SUB_COMMAND",
+            type: ApplicationCommandOptionType.Subcommand,
             options: [
                 {
                     name: "날짜",
                     description: "MMDD 형식",
-                    type: "STRING",
+                    type: ApplicationCommandOptionType.String,
                     required: true,
                 },
                 {
                     name: "test",
                     description: "테스트 여부",
-                    type: "BOOLEAN",
+                    type: ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
             ],
@@ -31,18 +29,18 @@ module.exports = {
         {
             name: "유저",
             description: "유저 Id로 찾기",
-            type: "SUB_COMMAND",
+            type: ApplicationCommandOptionType.Subcommand,
             options: [
                 {
                     name: "userid",
                     description: "Snowflake UserId",
-                    type: "STRING",
+                    type: ApplicationCommandOptionType.String,
                     required: true,
                 },
                 {
                     name: "test",
                     description: "테스트 여부",
-                    type: "BOOLEAN",
+                    type: ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
             ],
@@ -50,6 +48,8 @@ module.exports = {
     ],
 
     run: async (client: Client, interaction: CommandInteraction, locale: string) => {
+        if (!interaction.isChatInputCommand()) return;
+
         await interaction.deferReply({ ephemeral: true });
 
         let birthdays: (IBirthdays & { _id: string })[] | null;
@@ -75,10 +75,24 @@ module.exports = {
                 await interaction.editReply({
                     content: `[${isTest ? "테스트" : ""} ${("0" + month).slice(-2)}월  ${("0" + day).slice(-2)}일] ${birthdays.length} 유저\n${users ? users.join(", ") : ""}`,
                     components: [
-                        new MessageActionRow().addComponents(
-                            new MessageButton().setCustomId(`${interaction.id}-test-false`).setLabel("취소").setStyle("SECONDARY"),
-                            new MessageButton().setCustomId(`${interaction.id}-test-true`).setLabel("전송").setStyle("PRIMARY").setEmoji("<:cakeprogress:985470905314603018>")
-                        ),
+                        {
+                            type: 1,
+                            components: [
+                                {
+                                    type: 2,
+                                    label: "취소",
+                                    style: 2,
+                                    customId: `${interaction.id}-test-false`,
+                                },
+                                {
+                                    type: 2,
+                                    label: "전송",
+                                    emoji: "<:cakeprogress:985470905314603018>",
+                                    style: 1,
+                                    customId: `${interaction.id}-test-true`,
+                                },
+                            ],
+                        },
                     ],
                 });
 
@@ -93,10 +107,24 @@ module.exports = {
                 await interaction.editReply({
                     content: `${isTest ? "테스트" : ""} ${userId} 유저`,
                     components: [
-                        new MessageActionRow().addComponents(
-                            new MessageButton().setCustomId(`${interaction.id}-test-false`).setLabel("취소").setStyle("SECONDARY"),
-                            new MessageButton().setCustomId(`${interaction.id}-test-true`).setLabel("전송").setStyle("PRIMARY").setEmoji("<:cakeprogress:985470905314603018>")
-                        ),
+                        {
+                            type: 1,
+                            components: [
+                                {
+                                    type: 2,
+                                    label: "취소",
+                                    style: 2,
+                                    customId: `${interaction.id}-test-false`,
+                                },
+                                {
+                                    type: 2,
+                                    label: "전송",
+                                    emoji: "<:cakeprogress:985470905314603018>",
+                                    style: 1,
+                                    customId: `${interaction.id}-test-true`,
+                                },
+                            ],
+                        },
                     ],
                 });
                 break;

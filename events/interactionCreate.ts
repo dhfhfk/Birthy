@@ -1,4 +1,4 @@
-import { Interaction } from "discord.js";
+import { Interaction, InteractionType } from "discord.js";
 import client from "../bot";
 import Settings from "../models/guild-settings";
 import config from "../config";
@@ -6,7 +6,10 @@ import { getLocaleString as t } from "../utils/localization";
 
 client.on("interactionCreate", async (interaction: Interaction) => {
     // 빗금 명령어
-    if (interaction.isCommand()) {
+    if (!interaction.guild || !interaction.member) return;
+
+    if (interaction.isChatInputCommand()) {
+        if (!interaction.inCachedGuild()) return;
         import(`../commands/${interaction.commandName}`).then(async (command) => {
             if (command.permissions && !interaction.member.permissions.has(command.permissions)) {
                 return await interaction.reply({
@@ -15,7 +18,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         {
                             title: await t(interaction.locale, "permission_denied"),
                             description: await t(interaction.locale, "you_need_following_permission"),
-                            color: "#f56969",
+                            color: 0xf56969,
                             fields: [
                                 {
                                     name: await t(interaction.locale, "required_permission"),
@@ -36,7 +39,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
         });
     }
 
-    if (interaction.isAutocomplete()) {
+    if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
         switch (interaction.commandName) {
             case "생일": {
                 switch (interaction.options.getSubcommand()) {
@@ -65,7 +68,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
         }
     }
 
-    if (interaction.isContextMenu()) {
+    if (interaction.isContextMenuCommand()) {
         import(`../commands/${interaction.commandName}`).then(async (command) => {
             if (command) command.run(client, interaction, interaction.locale);
         });

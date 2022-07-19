@@ -1,6 +1,5 @@
-import { RateLimitData } from "discord.js";
 import client from "../bot";
 
-client.on("rateLimit", async (data: RateLimitData) => {
+client.rest.on("rateLimited", async (data: any) => {
     console.warn(data);
 });

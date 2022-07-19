@@ -19,8 +19,7 @@
     },
     "dependencies": {
         "agenda": "^4.3.0",
-        "discord.js": "^13.8.0",
-        "dotenv": "^16.0.1",
+        "discord.js": "^14.0.2",
         "koreanbots": "^3.2.1",
         "mongoose": "^6.3.6"
     },
