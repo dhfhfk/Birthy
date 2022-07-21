@@ -1,4 +1,4 @@
-import { HexColorString } from "discord.js";
+import { ChannelType } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
@@ -22,13 +22,13 @@ export async function sendBirthMessage(userId: string): Promise<{ success: boole
         const guild = await client.guilds.fetch(guildSetting._id);
         const member = await guild.members.fetch(userId);
         const channel = await client.channels.fetch(guildSetting.channelId);
-        if (!channel || !channel.isText()) return { success: false, message: "채널을 찾을 수 없음" };
+        if (!channel || channel.type != ChannelType.GuildText) return { success: false, message: "채널을 찾을 수 없음" };
 
         const message = await channel.send({
             content: "@here",
             embeds: [
                 {
-                    color: "#f5bed1",
+                    color: 0xf5bed1,
                     title: `<:cakeprogress:985470905314603018> 오늘은 ${member.nickname || member.user.username} 님의 ${userGuild.allowShowAge ? `${getAge(birthday.date).western}번째 ` : ""}생일이에요!`,
                     description: `<@${member.id}>님의 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?`,
                 },
@@ -92,23 +92,23 @@ export function getNextBirthday(birthday: Date): { rawDate: Date; unix: string }
  * @param {date} date 탄생석을 반환할 Date객체
  * @returns {{ name: string; color: HexColorString }}
  */
-export function getBirthstone(date: Date): { name: string; color: HexColorString } {
+export function getBirthstone(date: Date): { name: string; color: number } {
     const birthstones: {
         name: string;
-        color: HexColorString;
+        color: number;
     }[] = [
-        { name: "석류석", color: "#952929" },
-        { name: "자수정", color: "#9463c6" },
-        { name: "아쿠아마린", color: "#7bf7cd" },
-        { name: "다이아몬드", color: "#d2e4ec" },
-        { name: "에메랄드", color: "#4dc274" },
-        { name: "진주", color: "#dbd8cb" },
-        { name: "루비", color: "#d9105c" },
-        { name: "페리도트", color: "#aebe23" },
-        { name: "사파이어", color: "#0f4fb4" },
-        { name: "오팔", color: "#a3bdb6" },
-        { name: "토파즈", color: "#f7c278" },
-        { name: "탄자나이트", color: "#39497b" },
+        { name: "석류석", color: 0x952929 },
+        { name: "자수정", color: 0x9463c6 },
+        { name: "아쿠아마린", color: 0x7bf7cd },
+        { name: "다이아몬드", color: 0xd2e4ec },
+        { name: "에메랄드", color: 0x4dc274 },
+        { name: "진주", color: 0xdbd8cb },
+        { name: "루비", color: 0xd9105c },
+        { name: "페리도트", color: 0xaebe23 },
+        { name: "사파이어", color: 0x0f4fb4 },
+        { name: "오팔", color: 0xa3bdb6 },
+        { name: "토파즈", color: 0xf7c278 },
+        { name: "탄자나이트", color: 0x39497b },
     ];
     const monthIndx: number = date.getMonth();
     return birthstones[monthIndx];
@@ -122,7 +122,7 @@ export function getBirthstone(date: Date): { name: string; color: HexColorString
  * @param {date} date 별자리를 반환할 Date객체
  * @returns {{ name: string; color: HexColorString }}
  */
-export function getZodiac(date: Date): { name: string; color: HexColorString; emoji: string } {
+export function getZodiac(date: Date): { name: string; color: number; emoji: string } {
     let signMonthIndex;
     //bound is zero indexed and returns the day of month where the boundary occurs
     //ie. bound[0] = 20; means January 20th is the boundary for a zodiac sign
@@ -130,7 +130,7 @@ export function getZodiac(date: Date): { name: string; color: HexColorString; em
     //startMonth is zero indexed and returns the zodiac sign of the start of that month
     //ie. startMonth[0] = "Capricorn"; means start of January is Zodiac Sign "Capricorn"
     const startMonth = ["염소자리", "물병자리", "물고기자리", "양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "궁수자리"];
-    const colors: HexColorString[] = ["#707070", "#458cd2", "#96c790", "#db212c", "#568e4f", "#e8cb03", "#b5b5b5", "#ef7006", "#9d5d28", "#ed6da0", "#000000", "#884aad"];
+    const colors: number[] = [0x707070, 0x458cd2, 0x96c790, 0xdb212c, 0x568e4f, 0xe8cb03, 0xb5b5b5, 0xef7006, 0x9d5d28, 0xed6da0, 0x000000, 0x884aad];
     const emojis = ["♑", "♒", "♓", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐"];
     const monthIndex: number = date.getMonth(); //so we can use zero indexed arrays
     if (Number(("0" + date.getDate()).slice(-2)) <= bound[monthIndex]) {
