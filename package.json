@@ -5,7 +5,7 @@
     "main": "dist/index.js",
     "scripts": {
         "start": "ts-node --files bot.ts",
-        "start:watch": "ts-node-dev --files --rs bot.ts",
+        "dev": "nodemon bot.ts",
         "build": "tsc --project tsconfig.json"
     },
     "keywords": [],
