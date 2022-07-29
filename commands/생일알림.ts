@@ -1,4 +1,4 @@
-import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType } from "discord.js";
+import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, PermissionsBitField } from "discord.js";
 import Settings from "../models/guild-settings";
 import { getAge } from "../utils/function";
 
