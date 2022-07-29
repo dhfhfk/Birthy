@@ -1,4 +1,5 @@
-import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, PermissionsBitField } from "discord.js";
+import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, PermissionsBitField, InteractionType, Interaction } from "discord.js";
+import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
 import { getAge } from "../utils/function";
 
@@ -15,6 +16,33 @@ module.exports = {
     defaultMemberPermissions: [PermissionsBitField.Flags.Administrator],
     dmPermission: false,
     options: [
+        {
+            name: "멤버",
+            description: "[관리자]",
+            type: ApplicationCommandOptionType.SubcommandGroup,
+            options: [
+                {
+                    name: "지정",
+                    description: "[관리자] 특정 멤버의 생일을 지정해요. (최초 등록에만 가능)",
+                    type: ApplicationCommandOptionType.Subcommand,
+                    options: [
+                        {
+                            name: "멤버",
+                            description: "지정할 멤버 검색",
+                            type: ApplicationCommandOptionType.User,
+                            required: true,
+                        },
+                        {
+                            name: "나이공개",
+                            description: "다른 멤버에게 나이를 공개할까요? (서버 설정에 따름)",
+                            type: ApplicationCommandOptionType.String,
+                            autocomplete: true,
+                            required: true,
+                        },
+                    ],
+                },
+            ],
+        },
         {
             name: "셋업",
             description: "[관리자] 기념일을 챙기기 위한 기본 셋업",
@@ -98,20 +126,311 @@ module.exports = {
     run: async (client: Client, interaction: CommandInteraction, locale: string) => {
         if (!interaction.guild) return;
         if (!interaction.isChatInputCommand()) return;
+        if (!interaction.member) return;
 
         // 길드의 설정 정보 가져오기
-        const settingData = await Settings.findById(interaction.guild.id);
+        const guildSetting = await Settings.findById(interaction.guild.id);
+
+        if (!guildSetting) return;
 
         // SUB_COMMAND_GROUP 가져오기
         if (interaction.options.getSubcommandGroup(false)) {
             switch (interaction.options.getSubcommandGroup()) {
+                case "멤버":
+                    {
+                        const targetUser = interaction.options.getUser("멤버", true);
+                        const targetUserData = await Birthdays.findById(targetUser.id);
+                        switch (interaction.options.getSubcommand()) {
+                            case "지정": {
+                                if (targetUserData) {
+                                    const targetUserGuildData = targetUserData.guilds.find((guild) => interaction.guildId == guild._id);
+                                    if (targetUserData.date) {
+                                        if (!targetUserGuildData) {
+                                            interaction.reply({
+                                                ephemeral: true,
+                                                embeds: [
+                                                    {
+                                                        color: 0xf56969,
+                                                        author: {
+                                                            name: targetUser.username,
+                                                            icon_url: targetUser.displayAvatarURL(),
+                                                        },
+                                                        title: "<:xbold:985419129316065320> **이 멤버의 생일을 지정할 수 없어요**",
+                                                        description: "아직 이 서버에는 생일을 공개하지 않았어요. 멤버에게 `/생일 등록` 명령어를 요청해보세요.",
+                                                        footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
+                                                    },
+                                                ],
+                                            });
+                                            return;
+                                        }
+                                        interaction.reply({
+                                            ephemeral: true,
+                                            embeds: [
+                                                {
+                                                    color: 0xf56969,
+                                                    author: {
+                                                        name: targetUser.username,
+                                                        icon_url: targetUser.displayAvatarURL(),
+                                                    },
+                                                    title: "<:xbold:985419129316065320> **이미 생일이 등록되어있어요!**",
+                                                    footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
+                                                },
+                                            ],
+                                        });
+                                        return;
+                                    }
+                                }
+
+                                const today = new Date();
+                                await interaction.showModal({
+                                    title: "생일 등록",
+                                    customId: `${interaction.id}-birthday`,
+                                    components: [
+                                        {
+                                            type: 1,
+                                            components: [
+                                                {
+                                                    type: 4,
+                                                    customId: "birthday",
+                                                    label: `${
+                                                        today.getFullYear() +
+                                                        (today.getMonth() + 1 > 9 ? (today.getMonth() + 1).toString() : "0" + (today.getMonth() + 1)) +
+                                                        (today.getDate() > 9 ? today.getDate().toString() : "0" + today.getDate().toString())
+                                                    } 형식으로 입력해주세요.`,
+                                                    style: 1,
+                                                    minLength: 8,
+                                                    maxLength: 8,
+                                                    placeholder:
+                                                        today.getFullYear() +
+                                                        (today.getMonth() + 1 > 9 ? (today.getMonth() + 1).toString() : "0" + (today.getMonth() + 1)) +
+                                                        (today.getDate() > 9 ? today.getDate().toString() : "0" + today.getDate().toString()),
+                                                    required: true,
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                });
+                                break;
+                            }
+                        }
+                        client.on("interactionCreate", async (i: Interaction) => {
+                            if (i.type != InteractionType.ModalSubmit && !i.isButton()) return;
+                            if (!i.customId.startsWith(interaction.id)) return;
+                            const options = i.customId.split("-");
+
+                            if (!interaction.member) return;
+                            if (!interaction.guild) return;
+
+                            const targetUser = interaction.options.getUser("멤버", true);
+
+                            if (i.type == InteractionType.ModalSubmit) {
+                                switch (options[1]) {
+                                    case "birthday": {
+                                        const rawDate = i.fields.getTextInputValue("birthday");
+                                        const year = Number(rawDate.substring(0, 4));
+                                        if (isNaN(year) || year > new Date().getFullYear()) {
+                                            await i.reply({
+                                                ephemeral: true,
+                                                embeds: [
+                                                    {
+                                                        color: 0xf56969,
+                                                        author: {
+                                                            name: interaction.user.username,
+                                                            icon_url: interaction.user.displayAvatarURL(),
+                                                        },
+                                                        title: "<:xbold:985419129316065320> 날짜가 잘못 입력되었어요",
+                                                        fields: [
+                                                            {
+                                                                name: "해결법",
+                                                                value: "YYYYMMDD 형식으로 생일을 바르게 입력해주세요!",
+                                                                inline: false,
+                                                            },
+                                                        ],
+                                                        footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
+                                                    },
+                                                ],
+                                            });
+                                            return;
+                                        }
+                                        const month = Number(rawDate.substring(4, 6));
+                                        const day = Number(rawDate.substring(6, 8));
+                                        const birthday = new Date(year, month - 1, day + 0);
+                                        birthday.setHours(birthday.getHours() + 9);
+                                        const date2 = `${birthday.getFullYear()}년 ${("0" + (birthday.getMonth() + 1)).slice(-2)}월 ${("0" + birthday.getDate()).slice(-2)}일`;
+                                        await i.reply({
+                                            ephemeral: true,
+                                            embeds: [
+                                                {
+                                                    color: 0xf5bed1,
+                                                    author: {
+                                                        name: targetUser.username,
+                                                        icon_url: targetUser.displayAvatarURL(),
+                                                    },
+                                                    title: `<:cakeprogress00:985470906891632701> ${date2}`,
+                                                    description: "생일을 맞게 입력하셨나요?",
+                                                    fields: [
+                                                        {
+                                                            name: "\u200B",
+                                                            value: "생일을 잘못 입력했다면 메시지 닫기 후 명령어를 다시 사용해주세요.",
+                                                        },
+                                                    ],
+                                                    footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
+                                                },
+                                            ],
+                                            components: [
+                                                {
+                                                    type: 1,
+                                                    components: [
+                                                        {
+                                                            type: 2,
+                                                            label: "잘못됐어요",
+                                                            emoji: "<:xbold:985419129316065320>",
+                                                            style: 2,
+                                                            customId: `${interaction.id}-correctAge-false`,
+                                                        },
+                                                        {
+                                                            type: 2,
+                                                            label: "맞아요",
+                                                            emoji: "<:cakeprogress:985470905314603018>",
+                                                            style: 1,
+                                                            customId: `${interaction.id}-correctAge-true`,
+                                                        },
+                                                    ],
+                                                },
+                                            ],
+                                        });
+                                        const filter = (i: MessageComponentInteraction) => i.customId.startsWith(interaction.id);
+
+                                        const collector = interaction.channel?.createMessageComponentCollector({ filter, time: 300000 });
+                                        collector?.on("collect", async (ii: MessageComponentInteraction) => {
+                                            const options = ii.customId.split("-");
+                                            if (!options[0].startsWith(interaction.id)) return;
+                                            switch (options[1]) {
+                                                case "correctAge": {
+                                                    if (!JSON.parse(options[2])) {
+                                                        await i.editReply({ content: "`/생일 등록` 명령어를 다시 사용해주세요.", embeds: [], components: [] });
+                                                        return;
+                                                    }
+
+                                                    if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
+                                                        await i.reply({
+                                                            ephemeral: true,
+                                                            embeds: [
+                                                                {
+                                                                    color: 0xf56969,
+                                                                    author: {
+                                                                        name: targetUser.username,
+                                                                        icon_url: targetUser.displayAvatarURL(),
+                                                                    },
+                                                                    title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
+                                                                    description: "아래 이미지를 참조해 다시 시도해주세요.",
+                                                                    image: {
+                                                                        url: "https://i.ibb.co/rdpGVVZ/2-allow-Show-Age-typing.png",
+                                                                    },
+                                                                    footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
+                                                                },
+                                                            ],
+                                                        });
+                                                        return;
+                                                    }
+                                                    await Birthdays.findByIdAndUpdate(
+                                                        targetUser.id,
+                                                        {
+                                                            _id: targetUser.id,
+                                                            lastModifiedAt: new Date(),
+                                                            modifiedCount: 0,
+                                                            date: birthday,
+                                                            month: ("0" + (birthday.getMonth() + 1)).slice(-2),
+                                                            day: ("0" + birthday.getDate()).slice(-2),
+                                                            $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
+                                                        },
+                                                        { upsert: true }
+                                                    );
+                                                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                                                        $addToSet: { members: targetUser.id },
+                                                    });
+
+                                                    await ii.deferUpdate();
+                                                    await i.editReply({
+                                                        embeds: [
+                                                            {
+                                                                color: 0xf5bed1,
+                                                                author: {
+                                                                    name: targetUser.username,
+                                                                    icon_url: targetUser.displayAvatarURL(),
+                                                                },
+                                                                title: "<:cakeprogress:985470905314603018> 생일을 등록했어요!",
+                                                                description: "이제 이 서버에서 생일 알림을 받을 수 있어요.",
+                                                                fields: [
+                                                                    {
+                                                                        name: "Q. 다른 서버에서도 생일 알림이 전송되나요?",
+                                                                        value: "`/생일 등록` 명령어를 사용하면 그 서버에서도 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 해당 서버에서 `/생일 서버설정` 명령어를 사용해주세요.",
+                                                                        inline: false,
+                                                                    },
+                                                                ],
+                                                                footer: { text: "10초만 투자해 봇에 하트를 눌러 추천해주세요!" },
+                                                            },
+                                                        ],
+                                                        components: [
+                                                            {
+                                                                type: 1,
+                                                                components: [
+                                                                    {
+                                                                        type: 2,
+                                                                        label: "추천하기",
+                                                                        emoji: "❤️",
+                                                                        style: 5,
+                                                                        url: `https://koreanbots.dev/bots/${client.user?.id}/vote`,
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ],
+                                                    });
+                                                    if (birthday > new Date() || new Date().getFullYear() - birthday.getFullYear() > 100) {
+                                                        await i.followUp({ ephemeral: true, content: "연도가 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
+                                                        return;
+                                                    }
+                                                    return;
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            } else {
+                                // switch (options[1]) {
+                                //     case "delete": {
+                                //         if (options[2] == "false") {
+                                //             await interaction.editReply({ content: "생일 삭제를 취소했어요.", embeds: [], components: [] });
+                                //             return;
+                                //         }
+                                //         try {
+                                //             userData?.roles.forEach(async (role) => {
+                                //                 await interaction.member.roles.remove(role);
+                                //             });
+                                //         } catch (e) {
+                                //             //
+                                //         }
+                                //         await Birthdays.findByIdAndUpdate(interaction.user.id, {
+                                //             $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1, allowCreateNotifi: 1 },
+                                //         });
+                                //         await Settings.findByIdAndUpdate(interaction.guildId, {
+                                //             $pull: { members: interaction.user.id },
+                                //         });
+                                //         await interaction.editReply({ content: "생일 삭제를 완료했습니다.", embeds: [], components: [] });
+                                //         return;
+                                //     }
+                                // }
+                            }
+                        });
+                    }
+                    return;
                 case "채널": {
                     switch (interaction.options.getSubcommand()) {
                         // 채널 확인
                         case "확인": {
                             await interaction.deferReply({ ephemeral: true });
                             // 만약 채널 정보가 없다면
-                            if (!settingData || !settingData.channelId || !client.channels.cache.get(settingData.channelId)) {
+                            if (!guildSetting || !guildSetting.channelId || !client.channels.cache.get(guildSetting.channelId)) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
@@ -138,7 +457,7 @@ module.exports = {
                                         fields: [
                                             {
                                                 name: "알림 채널",
-                                                value: `<#${settingData.channelId}>`,
+                                                value: `<#${guildSetting.channelId}>`,
                                                 inline: false,
                                             },
                                         ],
@@ -216,7 +535,7 @@ module.exports = {
                         // 역할 확인
                         case "확인": {
                             // 만약 역할 정보가 없다면
-                            if (!settingData) {
+                            if (!guildSetting) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
@@ -236,7 +555,7 @@ module.exports = {
                                 });
                             }
                             // 리팩토링 예정
-                            // if (!settingData.subRole) {
+                            // if (!guildSetting.subRole) {
                             //     return await interaction.editReply({
                             //         embeds: [
                             //             {
@@ -258,10 +577,10 @@ module.exports = {
                             // const zodiacErr: number[] = [];
                             // const birthstoneErr: number[] = [];
                             // if (!interaction.guild) return;
-                            // settingData.zodiacRoles.forEach(async (r, i) => {
+                            // guildSetting.zodiacRoles.forEach(async (r, i) => {
                             //     if (!interaction.guild.roles.cache?.find((role) => role.id == r._id)) zodiacErr.push(i);
                             // });
-                            // settingData.birthstoneRoles.forEach(async (r, i) => {
+                            // guildSetting.birthstoneRoles.forEach(async (r, i) => {
                             //     if (!interaction.guild.roles.cache?.find((role) => role.id == r._id)) birthstoneErr.push(i);
                             // });
                             // return await interaction.editReply({
@@ -294,7 +613,7 @@ module.exports = {
                         }
                         case "비활성화": {
                             // 만약 역할 정보가 없다면
-                            if (!settingData) {
+                            if (!guildSetting) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
@@ -313,7 +632,7 @@ module.exports = {
                                     ],
                                 });
                             }
-                            if (!settingData.subRole) {
+                            if (!guildSetting.subRole) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
@@ -332,13 +651,13 @@ module.exports = {
                                     ],
                                 });
                             }
-                            if (settingData) {
+                            if (guildSetting) {
                                 // 리팩토링 예정
                                 // try {
-                                //     settingData.zodiacRoles.forEach(async (r) => {
+                                //     guildSetting.zodiacRoles.forEach(async (r) => {
                                 //         await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
                                 //     });
-                                //     settingData.birthstoneRoles.forEach(async (r) => {
+                                //     guildSetting.birthstoneRoles.forEach(async (r) => {
                                 //         await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
                                 //     });
                                 // } catch (e) {
@@ -369,7 +688,7 @@ module.exports = {
                         }
                         case "활성화": {
                             //
-                            if (!settingData) {
+                            if (!guildSetting) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
@@ -388,7 +707,7 @@ module.exports = {
                                     ],
                                 });
                             }
-                            if (settingData.subRole) {
+                            if (guildSetting.subRole) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
@@ -436,7 +755,7 @@ module.exports = {
             case "테스트": {
                 await interaction.deferReply({ ephemeral: true });
                 // 만약 채널 정보가 없다면
-                if (!settingData || !settingData.channelId || !client.channels.cache.get(settingData.channelId)) {
+                if (!guildSetting || !guildSetting.channelId || !client.channels.cache.get(guildSetting.channelId)) {
                     return await interaction.editReply({
                         embeds: [
                             {
@@ -455,7 +774,7 @@ module.exports = {
                         ],
                     });
                 }
-                const channel = client.channels.cache.get(settingData.channelId);
+                const channel = client.channels.cache.get(guildSetting.channelId);
                 if (!channel || channel.type != ChannelType.GuildText) return;
                 try {
                     const message = await channel.send({
@@ -649,9 +968,9 @@ module.exports = {
                             }
                             // 생일 역할 만들기
                             if (createRole) {
-                                if (settingData?.roleId) {
+                                if (guildSetting?.roleId) {
                                     try {
-                                        await interaction.guild.roles.delete(settingData.roleId, "무결성을 위해 삭제");
+                                        await interaction.guild.roles.delete(guildSetting.roleId, "무결성을 위해 삭제");
                                     } catch (e) {
                                         //
                                     }
