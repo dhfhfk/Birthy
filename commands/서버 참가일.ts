@@ -3,6 +3,7 @@ import { Client, UserContextMenuCommandInteraction, ApplicationCommandType } fro
 module.exports = {
     name: "서버 참가일",
     type: ApplicationCommandType.User,
+    dmPermission: false,
 
     run: async (client: Client, interaction: UserContextMenuCommandInteraction, locale: string) => {
         if (!interaction.guild) return;

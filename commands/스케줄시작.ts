@@ -6,6 +6,7 @@ module.exports = {
     dev: true,
     name: "스케줄시작",
     description: "[Dev] 스케줄시작 혹은 테스트",
+    dmPermission: false,
     options: [
         {
             name: "날짜",

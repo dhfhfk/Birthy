@@ -6,6 +6,7 @@ import { getZodiac, getBirthstone, getAge, getNextBirthday } from "../utils/func
 module.exports = {
     name: "생일 확인",
     type: ApplicationCommandType.User,
+    dmPermission: false,
 
     run: async (client: Client, interaction: UserContextMenuCommandInteraction, locale: string) => {
         await interaction.deferReply({ ephemeral: true });

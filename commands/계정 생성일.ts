@@ -3,6 +3,7 @@ import { Client, UserContextMenuCommandInteraction, ApplicationCommandType } fro
 module.exports = {
     name: "계정 생성일",
     type: ApplicationCommandType.User,
+    dmPermission: false,
 
     run: async (client: Client, interaction: UserContextMenuCommandInteraction, locale: string) => {
         await interaction.deferReply({ ephemeral: true });

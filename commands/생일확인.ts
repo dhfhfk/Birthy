@@ -6,6 +6,7 @@ import { getAge, getBirthstone, getNextBirthday, getZodiac } from "../utils/func
 module.exports = {
     name: "생일확인",
     description: "이 서버 멤버들의 생일을 확인해요.",
+    dmPermission: false,
     options: [
         {
             name: "멤버",
@@ -14,7 +15,7 @@ module.exports = {
             options: [
                 {
                     name: "멤버",
-                    description: "조회할 멤버",
+                    description: "조회할 멤버 검색",
                     type: ApplicationCommandOptionType.User,
                     required: true,
                 },

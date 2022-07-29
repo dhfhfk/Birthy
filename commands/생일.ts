@@ -5,6 +5,7 @@ import Birthdays from "../models/birthdays";
 module.exports = {
     name: "생일",
     description: "내 생일을 등록하거나 관리해요",
+    dmPermission: false,
     options: [
         {
             name: "등록",
@@ -506,7 +507,6 @@ module.exports = {
         }
 
         client.on("interactionCreate", async (i: Interaction) => {
-            // if (!i.isModalSubmit() && !i.isButton()) return;
             if (i.type != InteractionType.ModalSubmit && !i.isButton()) return;
             if (!i.customId.startsWith(interaction.id)) return;
             const options = i.customId.split("-");
