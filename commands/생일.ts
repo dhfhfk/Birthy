@@ -1,6 +1,7 @@
 import { Client, Interaction, MessageComponentInteraction, ChatInputCommandInteraction, InteractionType, ApplicationCommandOptionType } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
+import { sendLogMessage } from "../utils/function";
 
 module.exports = {
     name: "생일",
@@ -333,6 +334,7 @@ module.exports = {
                 await Settings.findByIdAndUpdate(interaction.guildId, {
                     $pull: { members: interaction.user.id },
                 });
+                await sendLogMessage(interaction.guildId, "unregister", interaction.user.id);
                 return await interaction.reply({
                     ephemeral: true,
                     embeds: [
@@ -342,8 +344,8 @@ module.exports = {
                                 name: interaction.member.nickname || interaction.user.username,
                                 icon_url: interaction.user.displayAvatarURL(),
                             },
-                            title: "<:cakeprogress00:985470906891632701> 이 서버에서 알림을 받지 않도록 설정했어요",
-                            description: "만약 이 서버에서 생일 알림을 받고싶으시다면 `/생일 등록` 명령어를 사용해주세요.",
+                            title: "<:cakeprogress00:985470906891632701> 이 서버에서 생일을 공유하지 않도록 설정했어요",
+                            description: "만약 이 서버에서 생일 공유와 알림을 받고싶으시다면 `/생일 등록` 명령어를 사용해주세요.",
                             footer: { text: `${interaction.user.id}` },
                         },
                     ],
@@ -451,6 +453,7 @@ module.exports = {
                     await Settings.findByIdAndUpdate(interaction.guildId, {
                         $addToSet: { members: interaction.user.id },
                     });
+                    await sendLogMessage(interaction.guildId, "register", interaction.user.id, { birthday: userData.date, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true });
                     return await interaction.reply({
                         ephemeral: true,
                         embeds: [
@@ -600,8 +603,11 @@ module.exports = {
                                         return;
                                     }
                                     if (change) {
-                                        await Birthdays.findByIdAndUpdate(
-                                            interaction.user.id,
+                                        const prevBirthday = await Birthdays.findById(interaction.user.id);
+                                        if (!prevBirthday) return;
+                                        const prevBirthdayDate = prevBirthday.date;
+
+                                        await prevBirthday?.update(
                                             {
                                                 _id: interaction.user.id,
                                                 lastModifiedAt: new Date(),
@@ -615,6 +621,14 @@ module.exports = {
                                         const decModifiedCount = client.agenda.create("dec modifiedCount", { userId: interaction.user.id });
                                         decModifiedCount.schedule("1 month after");
                                         await decModifiedCount.save();
+                                        const userGuildData: { _id: string; allowShowAge: boolean } | undefined = prevBirthday.guilds.find((guild) => {
+                                            return guild._id == interaction.guildId;
+                                        });
+                                        await sendLogMessage(interaction.guildId, "change", interaction.user.id, {
+                                            birthday: birthday,
+                                            prevBirthday: prevBirthdayDate,
+                                            allowShowAge: userGuildData?.allowShowAge,
+                                        });
                                     } else {
                                         if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
                                             await i.reply({
@@ -652,6 +666,10 @@ module.exports = {
                                         );
                                         await Settings.findByIdAndUpdate(interaction.guildId, {
                                             $addToSet: { members: interaction.user.id },
+                                        });
+                                        await sendLogMessage(interaction.guildId, "register", interaction.user.id, {
+                                            birthday: birthday,
+                                            allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true,
                                         });
                                     }
                                     await ii.deferUpdate();
@@ -714,12 +732,20 @@ module.exports = {
                         } catch (e) {
                             //
                         }
-                        await Birthdays.findByIdAndUpdate(interaction.user.id, {
-                            $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1, allowCreateNotifi: 1 },
-                        });
+                        const prevBirthday = userData;
+                        if (!prevBirthday) return;
+
+                        await Birthdays.findByIdAndUpdate(interaction.user.id, { $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1, allowCreateNotifi: 1 } });
+                        // await Birthdays.findByIdAndUpdate(interaction.user.id, {
+                        //     $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1, allowCreateNotifi: 1 },
+                        // });
                         await Settings.findByIdAndUpdate(interaction.guildId, {
                             $pull: { members: interaction.user.id },
                         });
+                        const userGuildData: { _id: string; allowShowAge: boolean } | undefined = prevBirthday.guilds.find((guild) => {
+                            return guild._id == interaction.guildId;
+                        });
+                        await sendLogMessage(interaction.guildId, "remove", interaction.user.id, { prevBirthday: prevBirthday.date, allowShowAge: userGuildData?.allowShowAge });
                         await interaction.editReply({ content: "생일 삭제를 완료했습니다.", embeds: [], components: [] });
                         return;
                     }
