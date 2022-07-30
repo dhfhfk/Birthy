@@ -8,12 +8,12 @@ import TodayBirthdays from "../models/today-birthdays";
 const status: { [key: string]: { name: string; color: number; emoji: string } } = {
     register: {
         name: "등록",
-        color: 0xdeaebf,
+        color: 0xf5bed1,
         emoji: "<:cakeprogress:985470905314603018>",
     },
     change: {
         name: "변경",
-        color: 0xdeaebf,
+        color: 0xf5bed1,
         emoji: "<:cakeprogress:985470905314603018>",
     },
     remove: {
