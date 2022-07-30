@@ -498,7 +498,56 @@ module.exports = {
                             });
                         }
                         case "해제": {
-                            break;
+                            await interaction.deferReply({ ephemeral: true });
+
+                            if (!guildSetting) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: 0xf56969,
+                                            title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
+                                            description: "같이 해결해봐요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            if (!guildSetting.logChannelId) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: 0xf56969,
+                                            title: "<:xbold:985419129316065320> 아직 로그 채널을 지정하지 않으셨어요!",
+                                            description: "같이 해결해봐요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 로그채널 지정`명령어로 채널을 지정해주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            await guildSetting.updateOne({ $unset: { logChannelId: 1 } });
+                            return await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: 0xf5bed1,
+                                        title: "<:cakeprogress00:985470906891632701> 이제 로그를 전송하지 않을게요",
+                                        footer: { text: `${interaction.user.id}` },
+                                    },
+                                ],
+                            });
                         }
                     }
                     break;
