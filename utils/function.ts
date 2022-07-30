@@ -1,11 +1,9 @@
-import { APIEmbed, ChannelType, JSONEncodable, Snowflake } from "discord.js";
+import { APIEmbed, ChannelType, Snowflake } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
 import { getLocaleString as t } from "../utils/localization";
 import TodayBirthdays from "../models/today-birthdays";
-import mongoose from "mongoose";
-import { database } from "agenda/dist/agenda/database";
 
 const status: { [key: string]: { name: string; color: number; emoji: string } } = {
     register: {

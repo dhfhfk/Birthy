@@ -1,4 +1,4 @@
-import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, PermissionsBitField, InteractionType, Interaction } from "discord.js";
+import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, InteractionType, Interaction } from "discord.js";
 import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
 import { getAge } from "../utils/function";
@@ -480,6 +480,8 @@ module.exports = {
                                 ],
                             });
                             return await interaction.followUp({
+                                ephemeral: true,
+                                content: "로그는 아래 임베드처럼 전송될 거예요.",
                                 embeds: [
                                     {
                                         color: 0xf5bed1,

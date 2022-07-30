@@ -379,7 +379,7 @@ module.exports = {
                                 icon_url: interaction.user.displayAvatarURL(),
                             },
                             title: "<:cakeprogress:985470905314603018> 정말 생일 정보를 삭제할까요?",
-                            description: "생일 정보가 모든 서버에서 삭제될거예요.",
+                            description: "생일 정보가 **모든 서버에서 삭제**될거예요.",
                             footer: { text: `${interaction.user.id}` },
                         },
                     ],
