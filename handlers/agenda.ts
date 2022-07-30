@@ -1,11 +1,9 @@
 import Agenda, { Job } from "agenda";
-import client from "../bot";
 import Birthdays from "../models/birthdays";
 import TodayBirthdays from "../models/today-birthdays";
-import Settings from "../models/guild-settings";
 import config from "../config";
 import { sendBirthMessage } from "../utils/function";
-import { Client, User } from "discord.js";
+import { Client } from "discord.js";
 
 module.exports = async (client: Client) => {
     const agenda = new Agenda({ db: { address: config.mongodb_uri, collection: "jobs" } });

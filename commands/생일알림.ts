@@ -1,4 +1,4 @@
-import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, PermissionsBitField, InteractionType, Interaction } from "discord.js";
+import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, InteractionType, Interaction } from "discord.js";
 import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
 import { getAge } from "../utils/function";
@@ -94,6 +94,32 @@ module.exports = {
             ],
         },
         {
+            name: "로그채널",
+            description: "[관리자]",
+            type: ApplicationCommandOptionType.SubcommandGroup,
+            options: [
+                {
+                    name: "해제",
+                    description: "[관리자] 생일 로그 채널을 해제해요.",
+                    type: ApplicationCommandOptionType.Subcommand,
+                },
+                {
+                    name: "지정",
+                    description: "[관리자] 생일 로그 채널을 지정해요.",
+                    type: ApplicationCommandOptionType.Subcommand,
+                    options: [
+                        {
+                            name: "채널",
+                            description: "어느 채널에 생일 로그를 전송해드릴까요?",
+                            type: ApplicationCommandOptionType.Channel,
+                            channelTypes: [ChannelType.GuildText],
+                            required: true,
+                        },
+                    ],
+                },
+            ],
+        },
+        {
             name: "역할",
             description: "[관리자]",
             type: ApplicationCommandOptionType.SubcommandGroup,
@@ -130,8 +156,6 @@ module.exports = {
 
         // 길드의 설정 정보 가져오기
         const guildSetting = await Settings.findById(interaction.guild.id);
-
-        if (!guildSetting) return;
 
         // SUB_COMMAND_GROUP 가져오기
         if (interaction.options.getSubcommandGroup(false)) {
@@ -342,7 +366,7 @@ module.exports = {
                                                             date: birthday,
                                                             month: ("0" + (birthday.getMonth() + 1)).slice(-2),
                                                             day: ("0" + birthday.getDate()).slice(-2),
-                                                            $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
+                                                            $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting?.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
                                                         },
                                                         { upsert: true }
                                                     );
@@ -424,6 +448,112 @@ module.exports = {
                         });
                     }
                     return;
+                case "로그채널": {
+                    switch (interaction.options.getSubcommand()) {
+                        case "지정": {
+                            await interaction.deferReply({ ephemeral: true });
+
+                            const channel = interaction.options.getChannel("채널", true);
+                            await Settings.findByIdAndUpdate(
+                                interaction.guildId,
+                                {
+                                    _id: interaction.guildId,
+                                    logChannelId: channel.id,
+                                },
+                                { upsert: true }
+                            );
+                            await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: 0xf5bed1,
+                                        title: "<:cakeprogress:985470905314603018> 생일 로그 채널을 지정했어요",
+                                        description: "이제 멤버들이 생일을 등록하면 메시지를 전송할게요.",
+                                        fields: [
+                                            {
+                                                name: "생일 로그 채널",
+                                                value: `<#${channel.id}>`,
+                                                inline: false,
+                                            },
+                                        ],
+                                        footer: { text: interaction.guild.id },
+                                    },
+                                ],
+                            });
+                            return await interaction.followUp({
+                                ephemeral: true,
+                                content: "로그는 아래 임베드처럼 전송될 거예요.",
+                                embeds: [
+                                    {
+                                        color: 0xf5bed1,
+                                        title: "<:cakeprogress:985470905314603018> 생일 로그 채널을 지정했어요",
+                                        description: "이제 멤버들이 생일을 등록하면 메시지를 전송할게요.",
+                                        fields: [
+                                            {
+                                                name: "생일 로그 채널",
+                                                value: `<#${channel.id}>`,
+                                                inline: false,
+                                            },
+                                        ],
+                                        footer: { text: interaction.guild.id },
+                                    },
+                                ],
+                            });
+                        }
+                        case "해제": {
+                            await interaction.deferReply({ ephemeral: true });
+
+                            if (!guildSetting) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: 0xf56969,
+                                            title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
+                                            description: "같이 해결해봐요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            if (!guildSetting.logChannelId) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: 0xf56969,
+                                            title: "<:xbold:985419129316065320> 아직 로그 채널을 지정하지 않으셨어요!",
+                                            description: "같이 해결해봐요.",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 로그채널 지정`명령어로 채널을 지정해주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            await guildSetting.updateOne({ $unset: { logChannelId: 1 } });
+                            return await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: 0xf5bed1,
+                                        title: "<:cakeprogress00:985470906891632701> 이제 로그를 전송하지 않을게요",
+                                        footer: { text: `${interaction.user.id}` },
+                                    },
+                                ],
+                            });
+                        }
+                    }
+                    break;
+                }
                 case "채널": {
                     switch (interaction.options.getSubcommand()) {
                         // 채널 확인
@@ -482,7 +612,7 @@ module.exports = {
                                 embeds: [
                                     {
                                         color: 0xf5bed1,
-                                        title: "<:cakeprogress:985470905314603018> 생일 알림 채널을 지정했어요.",
+                                        title: "<:cakeprogress:985470905314603018> 생일 알림 채널을 지정했어요",
                                         description: "이제 멤버들이 자신의 생일을 등록할 수 있도록 알려주세요.",
                                         fields: [
                                             {

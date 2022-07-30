@@ -1,4 +1,3 @@
-import { User } from "discord.js";
 import client from "../bot";
 
 /**

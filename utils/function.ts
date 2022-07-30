@@ -1,10 +1,104 @@
-import { ChannelType } from "discord.js";
+import { APIEmbed, ChannelType, Snowflake } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
 import { getLocaleString as t } from "../utils/localization";
 import TodayBirthdays from "../models/today-birthdays";
-import mongoose from "mongoose";
+
+const status: { [key: string]: { name: string; color: number; emoji: string } } = {
+    register: {
+        name: "등록",
+        color: 0xdeaebf,
+        emoji: "<:cakeprogress:985470905314603018>",
+    },
+    change: {
+        name: "변경",
+        color: 0xdeaebf,
+        emoji: "<:cakeprogress:985470905314603018>",
+    },
+    remove: {
+        name: "삭제",
+        color: 0xf56969,
+        emoji: "<:cakeprogress00:985470906891632701>",
+    },
+    unregister: {
+        name: "서버 설정 해제",
+        color: 0xf56969,
+        emoji: "<:cakeprogress00:985470906891632701>",
+    },
+};
+
+export { status };
+
+/**
+ * 채널에 로그를 전송합니다.
+ * @param {Snowflake} guildId 로그를 전송할 길드 Id
+ * @param {string} type type
+ * @param {Snowflake} userId 유저 Id
+ */
+export async function sendLogMessage(guildId: Snowflake, type: string, userId: Snowflake, data?: { birthday?: Date; prevBirthday?: Date; allowShowAge?: boolean }) {
+    const guildSetting = await Settings.findById(guildId);
+    if (!guildSetting || !guildSetting.logChannelId) return;
+
+    const logChannel = await client.channels.fetch(guildSetting.logChannelId);
+    if (!logChannel || logChannel.type !== ChannelType.GuildText) return;
+
+    const member = await logChannel.guild.members.fetch(userId);
+    if (!member) return;
+
+    const embed: APIEmbed = {
+        author: {
+            name: `${member.nickname || member.user.username} (${member.id})`,
+            icon_url: member.displayAvatarURL(),
+        },
+        description: `${status[type].emoji} <@${member.id}> 생일 ${status[type].name}`,
+        color: status[type].color,
+        fields: [],
+        timestamp: String(new Date().toISOString()),
+    };
+    switch (type) {
+        case "register": {
+            if (!data || !data.birthday) return;
+            embed.fields?.push({
+                name: "등록 생일 정보",
+                value: `${data.allowShowAge ? `${data.birthday.getFullYear()}년` : ""} ${("0" + (data.birthday.getMonth() + 1)).slice(-2)}월 ${("0" + data.birthday.getDate()).slice(-2)}일`,
+            });
+            break;
+        }
+        case "change": {
+            if (!data || !data.birthday || !data.prevBirthday) return;
+            embed.fields?.push(
+                {
+                    name: "이전 생일 정보",
+                    value: `${data.allowShowAge ? `${data.prevBirthday.getFullYear()}년` : ""} ${("0" + (data.prevBirthday.getMonth() + 1)).slice(-2)}월 ${("0" + data.prevBirthday.getDate()).slice(-2)}일`,
+                },
+                {
+                    name: "변경된 생일 정보",
+                    value: `${data.allowShowAge ? `${data.birthday.getFullYear()}년` : ""} ${("0" + (data.birthday.getMonth() + 1)).slice(-2)}월 ${("0" + data.birthday.getDate()).slice(-2)}일`,
+                }
+            );
+            break;
+        }
+        case "remove": {
+            if (!data || !data.prevBirthday) return;
+            embed.fields?.push({
+                name: "이전 생일 정보",
+                value: `${data.allowShowAge ? `${data.prevBirthday.getFullYear()}년` : ""} ${("0" + (data.prevBirthday.getMonth() + 1)).slice(-2)}월 ${("0" + data.prevBirthday.getDate()).slice(-2)}일`,
+            });
+            break;
+        }
+        case "unregister": {
+            embed.fields?.push({
+                name: "\u200B",
+                value: "`/생일 서버설정` 명령어로 서버에서 생일을 공유하지 않도록 설정했어요.",
+            });
+            break;
+        }
+    }
+    await logChannel.send({
+        embeds: [embed],
+    });
+}
 
 /**
  * 채널에 축하 메시지를 전송하고 스레드를 생성합니다.
