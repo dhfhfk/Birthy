@@ -13,7 +13,7 @@ module.exports = {
         "en-US": "[Moderator only] Setup for anniversaries",
     },
     defaultPermission: false,
-    defaultMemberPermissions: [PermissionsBitField.Flags.Administrator],
+    defaultMemberPermissions: "0",
     dmPermission: false,
     options: [
         {
