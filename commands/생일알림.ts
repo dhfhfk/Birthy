@@ -479,22 +479,26 @@ module.exports = {
                                     },
                                 ],
                             });
+                            if (!client.user) return;
+                            const today = new Date();
                             return await interaction.followUp({
                                 ephemeral: true,
                                 content: "로그는 아래 임베드처럼 전송될 거예요.",
                                 embeds: [
                                     {
+                                        author: {
+                                            name: `${client.user.username} (${client.user.id})`,
+                                            icon_url: client.user.displayAvatarURL(),
+                                        },
                                         color: 0xf5bed1,
-                                        title: "<:cakeprogress:985470905314603018> 생일 로그 채널을 지정했어요",
-                                        description: "이제 멤버들이 생일을 등록하면 메시지를 전송할게요.",
+                                        description: `<:cakeprogress:985470905314603018> <@${client.user.id}> 생일 등록`,
                                         fields: [
                                             {
-                                                name: "생일 로그 채널",
-                                                value: `<#${channel.id}>`,
-                                                inline: false,
+                                                name: "등록 생일 정보",
+                                                value: `${today.getFullYear()}년 ${("0" + (today.getMonth() + 1)).slice(-2)}월 ${("0" + today.getDate()).slice(-2)}일`,
                                             },
                                         ],
-                                        footer: { text: interaction.guild.id },
+                                        timestamp: String(new Date().toISOString()),
                                     },
                                 ],
                             });
