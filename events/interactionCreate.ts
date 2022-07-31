@@ -41,8 +41,10 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 
     if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
         switch (interaction.commandName) {
+            case "생일알림":
             case "생일": {
                 switch (interaction.options.getSubcommand()) {
+                    case "지정":
                     case "등록":
                     case "나이공개": {
                         const guildSetting = await Settings.findById(interaction.guildId);
