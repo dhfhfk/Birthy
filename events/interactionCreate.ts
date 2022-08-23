@@ -321,7 +321,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 ],
             });
             if (birthday > new Date() || new Date().getFullYear() - birthday.getFullYear() > 100) {
-                await interaction.followUp({ ephemeral: true, content: "연도가 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
+                await interaction.followUp({ ephemeral: true, content: "생일이 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
                 return;
             }
             return;
@@ -388,7 +388,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
             ],
         });
         if (birthday > new Date() || new Date().getFullYear() - birthday.getFullYear() > 100) {
-            await interaction.followUp({ ephemeral: true, content: "연도가 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
+            await interaction.followUp({ ephemeral: true, content: "생일이 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
             return;
         }
         return;
