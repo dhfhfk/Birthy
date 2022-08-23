@@ -120,7 +120,7 @@ export async function sendRegisterHelper(channel: TextChannel, allowHideAge: boo
                     },
                     {
                         name: `🔒 나이 비공개 ${allowHideAge ? "" : "(서버 설정에 의해 제한됨)"}`,
-                        value: allowHideAge ? "내 나이는 공개하지 않고 날짜만 공유해요." : "~~내 나이는 공개하지 않고 날짜만 공유해요.~~",
+                        value: allowHideAge ? "내 나이는 공개하지 않아요." : "~~내 나이는 공개하지 않아요.~~",
                         inline: true,
                     },
                 ],
