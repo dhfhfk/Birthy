@@ -1,17 +1,10 @@
-export interface Config {
-    token: string;
-    mongodb_uri: string;
-    languages: string[];
-    dev_guilds: string[];
-    dev_users: string[];
-    koreanbots_token: string;
-}
+import { Config } from "./interfaces/Config";
 
 export default {
-    token: "discord-bot-Token",
-    mongodb_uri: "mongodb://localhost:27017/discordBot",
+    token: process.env.BOT_TOKEN,
+    mongodb_uri: process.env.MONGODB_URI,
     languages: ["ko", "en-US"],
-    dev_guilds: ["000000000000000000"];
-    dev_users: ["000000000000000000"];
-    koreanbots_token: "",
+    dev_guilds: ["0000000000000000"],
+    dev_users: ["0000000000000000"],
+    koreanbots_token: process.env.KOREANBOTS_TOKEN,
 } as Config;
