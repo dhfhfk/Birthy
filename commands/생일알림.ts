@@ -1,7 +1,7 @@
-import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, InteractionType, Interaction } from "discord.js";
+import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, GuildMember, TextChannel } from "discord.js";
 import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
-import { getAge } from "../utils/function";
+import { getAge, sendRegisterHelper } from "../utils/function";
 
 module.exports = {
     name: "생일알림",
@@ -57,11 +57,20 @@ module.exports = {
                 },
             ],
         },
-        // {
-        //     name: "공지전송",
-        //     description: "[관리자] 멤버들이 생일을 등록할 수 있도록 공지 메시지를 전송해요.",
-        //     type: ApplicationCommandOptionType.Subcommand,
-        // },
+        {
+            name: "공지전송",
+            description: "[관리자] 멤버들이 쉽게 생일을 등록할 수 있도록 공지 메시지를 전송해요.",
+            type: ApplicationCommandOptionType.Subcommand,
+            options: [
+                {
+                    name: "채널",
+                    description: "어느 채널에 공지를 전송해드릴까요? (선택하지 않으면 생일 알림 채널로 보내드릴게요)",
+                    type: ApplicationCommandOptionType.Channel,
+                    channelTypes: [ChannelType.GuildText],
+                    required: false,
+                },
+            ],
+        },
         {
             name: "채널",
             description: "[관리자]",
@@ -208,7 +217,7 @@ module.exports = {
                                 const today = new Date();
                                 await interaction.showModal({
                                     title: "생일 등록",
-                                    customId: `${interaction.id}-birthday`,
+                                    customId: `birthday-${guildSetting?.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true}`,
                                     components: [
                                         {
                                             type: 1,
@@ -237,214 +246,6 @@ module.exports = {
                                 break;
                             }
                         }
-                        client.on("interactionCreate", async (i: Interaction) => {
-                            if (i.type != InteractionType.ModalSubmit && !i.isButton()) return;
-                            if (!i.customId.startsWith(interaction.id)) return;
-                            const options = i.customId.split("-");
-
-                            if (!interaction.member) return;
-                            if (!interaction.guild) return;
-
-                            const targetUser = interaction.options.getUser("멤버", true);
-
-                            if (i.type == InteractionType.ModalSubmit) {
-                                switch (options[1]) {
-                                    case "birthday": {
-                                        const rawDate = i.fields.getTextInputValue("birthday");
-                                        const year = Number(rawDate.substring(0, 4));
-                                        if (isNaN(year) || year > new Date().getFullYear()) {
-                                            await i.reply({
-                                                ephemeral: true,
-                                                embeds: [
-                                                    {
-                                                        color: 0xf56969,
-                                                        author: {
-                                                            name: interaction.user.username,
-                                                            icon_url: interaction.user.displayAvatarURL(),
-                                                        },
-                                                        title: "<:xbold:985419129316065320> 날짜가 잘못 입력되었어요",
-                                                        fields: [
-                                                            {
-                                                                name: "해결법",
-                                                                value: "YYYYMMDD 형식으로 생일을 바르게 입력해주세요!",
-                                                                inline: false,
-                                                            },
-                                                        ],
-                                                        footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
-                                                    },
-                                                ],
-                                            });
-                                            return;
-                                        }
-                                        const month = Number(rawDate.substring(4, 6));
-                                        const day = Number(rawDate.substring(6, 8));
-                                        const birthday = new Date(year, month - 1, day + 0);
-                                        birthday.setHours(birthday.getHours() + 9);
-                                        const date2 = `${birthday.getFullYear()}년 ${("0" + (birthday.getMonth() + 1)).slice(-2)}월 ${("0" + birthday.getDate()).slice(-2)}일`;
-                                        await i.reply({
-                                            ephemeral: true,
-                                            embeds: [
-                                                {
-                                                    color: 0xf5bed1,
-                                                    author: {
-                                                        name: targetUser.username,
-                                                        icon_url: targetUser.displayAvatarURL(),
-                                                    },
-                                                    title: `<:cakeprogress00:985470906891632701> ${date2}`,
-                                                    description: "생일을 맞게 입력하셨나요?",
-                                                    fields: [
-                                                        {
-                                                            name: "\u200B",
-                                                            value: "생일을 잘못 입력했다면 메시지 닫기 후 명령어를 다시 사용해주세요.",
-                                                        },
-                                                    ],
-                                                    footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
-                                                },
-                                            ],
-                                            components: [
-                                                {
-                                                    type: 1,
-                                                    components: [
-                                                        {
-                                                            type: 2,
-                                                            label: "잘못됐어요",
-                                                            emoji: "<:xbold:985419129316065320>",
-                                                            style: 2,
-                                                            customId: `${interaction.id}-correctAge-false`,
-                                                        },
-                                                        {
-                                                            type: 2,
-                                                            label: "맞아요",
-                                                            emoji: "<:cakeprogress:985470905314603018>",
-                                                            style: 1,
-                                                            customId: `${interaction.id}-correctAge-true`,
-                                                        },
-                                                    ],
-                                                },
-                                            ],
-                                        });
-                                        const filter = (i: MessageComponentInteraction) => i.customId.startsWith(interaction.id);
-
-                                        const collector = interaction.channel?.createMessageComponentCollector({ filter, time: 300000 });
-                                        collector?.on("collect", async (ii: MessageComponentInteraction) => {
-                                            const options = ii.customId.split("-");
-                                            if (!options[0].startsWith(interaction.id)) return;
-                                            switch (options[1]) {
-                                                case "correctAge": {
-                                                    if (!JSON.parse(options[2])) {
-                                                        await i.editReply({ content: "`/생일 등록` 명령어를 다시 사용해주세요.", embeds: [], components: [] });
-                                                        return;
-                                                    }
-
-                                                    if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
-                                                        await i.editReply({
-                                                            embeds: [
-                                                                {
-                                                                    color: 0xf56969,
-                                                                    author: {
-                                                                        name: targetUser.username,
-                                                                        icon_url: targetUser.displayAvatarURL(),
-                                                                    },
-                                                                    title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
-                                                                    description: "아래 이미지를 참조해 다시 시도해주세요.",
-                                                                    image: {
-                                                                        url: "https://i.ibb.co/rdpGVVZ/2-allow-Show-Age-typing.png",
-                                                                    },
-                                                                    footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
-                                                                },
-                                                            ],
-                                                        });
-                                                        return;
-                                                    }
-                                                    await Birthdays.findByIdAndUpdate(
-                                                        targetUser.id,
-                                                        {
-                                                            _id: targetUser.id,
-                                                            lastModifiedAt: new Date(),
-                                                            modifiedCount: 0,
-                                                            date: birthday,
-                                                            month: ("0" + (birthday.getMonth() + 1)).slice(-2),
-                                                            day: ("0" + birthday.getDate()).slice(-2),
-                                                            $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting?.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true } },
-                                                        },
-                                                        { upsert: true }
-                                                    );
-                                                    await Settings.findByIdAndUpdate(interaction.guildId, {
-                                                        $addToSet: { members: targetUser.id },
-                                                    });
-
-                                                    await ii.deferUpdate();
-                                                    await i.editReply({
-                                                        embeds: [
-                                                            {
-                                                                color: 0xf5bed1,
-                                                                author: {
-                                                                    name: targetUser.username,
-                                                                    icon_url: targetUser.displayAvatarURL(),
-                                                                },
-                                                                title: "<:cakeprogress:985470905314603018> 생일을 등록했어요!",
-                                                                description: "이제 이 서버에서 생일 알림을 받을 수 있어요.",
-                                                                fields: [
-                                                                    {
-                                                                        name: "Q. 다른 서버에서도 제 생일을 확인할 수 있나요?",
-                                                                        value: "`/생일 등록` 명령어를 사용하면 그 서버에서도 생일이 공유될 거에요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 해당 서버에서 `/생일 서버설정` 명령어를 사용해주세요.",
-                                                                        inline: false,
-                                                                    },
-                                                                ],
-                                                                footer: { text: "10초만 투자해 봇에 하트를 눌러 추천해주세요!" },
-                                                            },
-                                                        ],
-                                                        components: [
-                                                            {
-                                                                type: 1,
-                                                                components: [
-                                                                    {
-                                                                        type: 2,
-                                                                        label: "추천하기",
-                                                                        emoji: "❤️",
-                                                                        style: 5,
-                                                                        url: `https://koreanbots.dev/bots/${client.user?.id}/vote`,
-                                                                    },
-                                                                ],
-                                                            },
-                                                        ],
-                                                    });
-                                                    if (birthday > new Date() || new Date().getFullYear() - birthday.getFullYear() > 100) {
-                                                        await i.followUp({ ephemeral: true, content: "생일이 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
-                                                        return;
-                                                    }
-                                                    return;
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                            } else {
-                                // switch (options[1]) {
-                                //     case "delete": {
-                                //         if (options[2] == "false") {
-                                //             await interaction.editReply({ content: "생일 삭제를 취소했어요.", embeds: [], components: [] });
-                                //             return;
-                                //         }
-                                //         try {
-                                //             userData?.roles.forEach(async (role) => {
-                                //                 await interaction.member.roles.remove(role);
-                                //             });
-                                //         } catch (e) {
-                                //             //
-                                //         }
-                                //         await Birthdays.findByIdAndUpdate(interaction.user.id, {
-                                //             $unset: { date: 1, roles: 1, guilds: 1, allowCreateThread: 1, month: 1, day: 1, allowCreateNotifi: 1 },
-                                //         });
-                                //         await Settings.findByIdAndUpdate(interaction.guildId, {
-                                //             $pull: { members: interaction.user.id },
-                                //         });
-                                //         await interaction.editReply({ content: "생일 삭제를 완료했습니다.", embeds: [], components: [] });
-                                //         return;
-                                //     }
-                                // }
-                            }
-                        });
                     }
                     return;
                 case "로그채널": {
@@ -880,6 +681,44 @@ module.exports = {
         }
 
         switch (interaction.options.getSubcommand()) {
+            case "공지전송": {
+                await interaction.deferReply({ ephemeral: true });
+                const member = interaction.member as GuildMember;
+                if (!guildSetting || !guildSetting.isSetup) {
+                    return await interaction.editReply({
+                        embeds: [
+                            {
+                                color: 0xf56969,
+                                title: "<:xbold:985419129316065320> 기본 생일 셋업이 되어있지 않아요!",
+                                description: "서버 관리자가 직접 `/생일알림 셋업`명령어를 이용해 셋업을 진행해야 사용할 수 있어요.",
+                                fields: [
+                                    {
+                                        name: "해결법",
+                                        value: member.permissions.has(["Administrator"]) ? "마침 관리자분이셨네요! `/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요." : "서버 관리자에게 `/생일알림 셋업`명령어 사용을 요청해주세요.",
+                                        inline: false,
+                                    },
+                                ],
+                                footer: { text: interaction.guild.id },
+                            },
+                        ],
+                    });
+                }
+                try {
+                    let channel = interaction.options.getChannel("채널", false);
+                    if (!channel) channel = await interaction.guild.channels.fetch(guildSetting.channelId);
+
+                    if (!channel || !(channel instanceof TextChannel)) return;
+
+                    await sendRegisterHelper(channel, guildSetting.allowHideAge);
+
+                    return await interaction.editReply({
+                        content: "메시지를 전송했어요.",
+                    });
+                } catch (e) {
+                    return await interaction.editReply({ content: `오류가 발생했어요. ${e}` });
+                }
+            }
+
             case "테스트": {
                 await interaction.deferReply({ ephemeral: true });
                 // 만약 채널 정보가 없다면
@@ -940,7 +779,7 @@ module.exports = {
                 let createRole = false;
                 let createChannel = false;
                 let createSubRole = false;
-                let channel = interaction.options.getChannel("채널", false);
+                let channel = interaction.options.getChannel("채널", false) as TextChannel | null;
                 let role: Role;
 
                 if (!channel) {
@@ -963,7 +802,7 @@ module.exports = {
                             components: [
                                 {
                                     type: 2,
-                                    label: "아니오",
+                                    label: "아니요",
                                     style: 2,
                                     customId: `${interaction.id}-hideAge-false`,
                                 },
@@ -1014,7 +853,7 @@ module.exports = {
                                         components: [
                                             {
                                                 type: 2,
-                                                label: "아니오",
+                                                label: "아니요",
                                                 style: 2,
                                                 customId: `${interaction.id}-subRole-false`,
                                             },
@@ -1128,6 +967,16 @@ module.exports = {
                                 },
                                 { upsert: true }
                             );
+                            if (!channel) {
+                                await interaction.editReply({ content: "채널 생성 오류" });
+                                return;
+                            }
+                            try {
+                                await sendRegisterHelper(channel, guildSetting!.allowHideAge);
+                            } catch (e) {
+                                await interaction.editReply({ content: `오류가 발생했어요. ${e}` });
+                                return;
+                            }
                             await interaction.editReply({
                                 embeds: [
                                     {

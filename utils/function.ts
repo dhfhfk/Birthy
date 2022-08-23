@@ -1,9 +1,10 @@
-import { APIEmbed, ChannelType, Snowflake } from "discord.js";
+import { APIEmbed, ChannelType, Snowflake, TextChannel } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
 import { getLocaleString as t } from "../utils/localization";
 import TodayBirthdays from "../models/today-birthdays";
+import config from "../config";
 
 const status: { [key: string]: { name: string; color: number; emoji: string } } = {
     register: {
@@ -98,6 +99,77 @@ export async function sendLogMessage(guildId: Snowflake, type: string, userId: S
     await logChannel.send({
         embeds: [embed],
     });
+}
+
+/**
+ * 생일 등록을 위한 공지 메시지를 전송합니다.
+ * @param {Snowflake} channel 메시지를 전송할 채널
+ */
+export async function sendRegisterHelper(channel: TextChannel, allowHideAge: boolean) {
+    const contents: any = {
+        embeds: [
+            {
+                color: 0xf5bed1,
+                title: "🎂 생일 등록하기",
+                description: "생일을 등록하면 멤버들과 서로의 생일을 공유하고 축하해줄 수 있어요.\n아래 버튼을 선택하면 생일 입력 창이 표시될 거예요.",
+                fields: [
+                    {
+                        name: "🔓 나이 공개",
+                        value: "내 나이를 공개하고 공유해요.",
+                        inline: true,
+                    },
+                    {
+                        name: `🔒 나이 비공개 ${allowHideAge ? "" : "(서버 설정에 의해 제한됨)"}`,
+                        value: allowHideAge ? "내 나이는 공개하지 않아요." : "~~내 나이는 공개하지 않아요.~~",
+                        inline: true,
+                    },
+                ],
+                footer: { text: "10초만 투자해 봇에 하트를 눌러 추천해주세요!" },
+            },
+        ],
+        components: [
+            {
+                type: 1,
+                components: [
+                    {
+                        type: 2,
+                        label: "나이 공개",
+                        emoji: "🔓",
+                        style: 1,
+                        customId: "birthday-register-true",
+                    },
+                    {
+                        type: 2,
+                        label: "나이 비공개",
+                        emoji: "🔒",
+                        style: 1,
+                        customId: "birthday-register-false",
+                        disabled: !allowHideAge,
+                    },
+                ],
+            },
+            {
+                type: 1,
+                components: [
+                    {
+                        type: 2,
+                        label: "봇 추천하기",
+                        emoji: "❤️",
+                        style: 5,
+                        url: `https://koreanbots.dev/bots/${client.user?.id}/vote`,
+                    },
+                    {
+                        type: 2,
+                        label: "서포트서버",
+                        emoji: "📢",
+                        style: 5,
+                        url: config.support_server_uri,
+                    },
+                ],
+            },
+        ],
+    };
+    await channel.send(contents);
 }
 
 /**
