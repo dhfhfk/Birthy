@@ -119,7 +119,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         embeds: [
                             {
                                 color: 0xf56969,
-                                title: "<:xbold:985419129316065320> 생일 알림 기본 셋업이 되어있지 않아요!",
+                                title: "<:xbold:985419129316065320> 기본 생일 셋업이 되어있지 않아요!",
                                 description: "서버 관리자가 직접 `/생일알림 셋업`명령어를 이용해 셋업을 진행해야 사용할 수 있어요.",
                                 fields: [
                                     {
@@ -170,12 +170,12 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                                     name: member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
                                 },
-                                title: "<:cakeprogress:985470905314603018> 이 서버에서도 생일 알림을 받도록 설정했어요",
-                                description: "이미 등록해둔 생일 정보로 생일 알림을 등록했어요.",
+                                title: "<:cakeprogress:985470905314603018> 이 서버에서도 생일을 공유하도록 설정했어요",
+                                description: "이미 등록해둔 생일 정보로 빠르게 등록했어요.",
                                 fields: [
                                     {
-                                        name: "이 서버에서는 생일 알림을 받고싶지 않을 경우",
-                                        value: "`/생일 서버설정` 명령어를 사용하시면 그 서버에서는 생일 알림을 보내지 않도록 설정할게요.",
+                                        name: "이 서버에서는 생일을 공유하고 싶지 않은 경우",
+                                        value: "`/생일 서버설정` 명령어를 사용하시면 그 서버에서는 생일을 공유하지 않도록 설정할게요.",
                                         inline: false,
                                     },
                                 ],
@@ -364,8 +364,8 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     )}일로 공유될 거예요.`,
                     fields: [
                         {
-                            name: "Q. 다른 서버에서도 생일 알림이 전송되나요?",
-                            value: "`/생일 등록` 명령어를 사용하면 그 서버에서도 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 해당 서버에서 `/생일 서버설정` 명령어를 사용해주세요.",
+                            name: "Q. 다른 서버에서도 자동으로 생일이 공유되나요?",
+                            value: "`/생일 등록` 명령어를 사용하면 그 서버에서도 생일이 공유될 거예요.\n만약 특정 서버에서 공유하고싶지 않으시다면 해당 서버에서 `/생일 서버설정` 명령어를 사용해주세요.",
                             inline: false,
                         },
                     ],
