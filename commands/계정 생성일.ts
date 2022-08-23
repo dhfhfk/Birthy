@@ -11,14 +11,12 @@ module.exports = {
         if (!interaction.guild) return;
 
         const user = await client.users.fetch(interaction.targetId);
-        const member = await interaction.guild.members.fetch(interaction.targetId);
 
-        if (!user.createdAt || !user.createdTimestamp) return;
         const diff = Math.abs((new Date().getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24));
         const embed = {
             color: 0xf5bed1,
             author: {
-                name: member.nickname || user.username,
+                name: user.username,
                 icon_url: user.displayAvatarURL(),
             },
             description: `🗓️ <@${user.id}>`,
@@ -35,7 +33,7 @@ module.exports = {
                 },
             ],
         };
-        await interaction.editReply({
+        return await interaction.editReply({
             embeds: [embed],
         });
     },
