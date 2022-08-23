@@ -43,7 +43,7 @@ module.exports = async (client: Client) => {
     agenda.define("dec modifiedCount", async (job: Job) => {
         const birthday = await Birthdays.findOne({ userId: job.attrs.data?.userId });
         if (!birthday) return;
-        await birthday.update({
+        await birthday.updateOne({
             modifiedCount: 0,
             lastModifiedAt: new Date(),
         });
