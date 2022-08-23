@@ -1,4 +1,6 @@
 import { Config } from "./interfaces/Config";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 export default {
     token: process.env.BOT_TOKEN,
@@ -6,5 +8,6 @@ export default {
     languages: ["ko", "en-US"],
     dev_guilds: ["0000000000000000"],
     dev_users: ["0000000000000000"],
+    support_serversupport_server_uri: "",
     koreanbots_token: process.env.KOREANBOTS_TOKEN,
 } as Config;

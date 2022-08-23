@@ -359,7 +359,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         icon_url: interaction.user.displayAvatarURL(),
                     },
                     title: "<:cakeprogress:985470905314603018> 생일을 등록했어요!",
-                    description: `이제 생일이${(guildSetting.allowHideAge ? allowShowAge : true) ? `${birthday.getFullYear()}년` : ""} ${("0" + (birthday.getMonth() + 1)).slice(-2)}월 ${("0" + birthday.getDate()).slice(
+                    description: `이제 생일이 ${(guildSetting.allowHideAge ? allowShowAge : true) && `${birthday.getFullYear()}년`} ${("0" + (birthday.getMonth() + 1)).slice(-2)}월 ${("0" + birthday.getDate()).slice(
                         -2
                     )}일로 공유될 거예요.`,
                     fields: [

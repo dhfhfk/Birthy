@@ -1,7 +1,7 @@
 import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, GuildMember, TextChannel } from "discord.js";
 import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
-import { getAge } from "../utils/function";
+import { getAge, sendRegisterHelper } from "../utils/function";
 
 module.exports = {
     name: "생일알림",
@@ -682,10 +682,10 @@ module.exports = {
 
         switch (interaction.options.getSubcommand()) {
             case "공지전송": {
+                await interaction.deferReply({ ephemeral: true });
                 const member = interaction.member as GuildMember;
                 if (!guildSetting || !guildSetting.isSetup) {
-                    return await interaction.reply({
-                        ephemeral: true,
+                    return await interaction.editReply({
                         embeds: [
                             {
                                 color: 0xf56969,
@@ -703,42 +703,20 @@ module.exports = {
                         ],
                     });
                 }
-                let channel = interaction.options.getChannel("채널", false);
-                if (!channel) channel = await interaction.guild.channels.fetch(guildSetting.channelId);
+                try {
+                    let channel = interaction.options.getChannel("채널", false);
+                    if (!channel) channel = await interaction.guild.channels.fetch(guildSetting.channelId);
 
-                if (!channel || !(channel instanceof TextChannel)) return;
+                    if (!channel || !(channel instanceof TextChannel)) return;
 
-                channel.send({
-                    embeds: [
-                        {
-                            color: 0xf5bed1,
-                            title: "🎂 생일 등록하기",
-                        },
-                    ],
-                    components: [
-                        {
-                            type: 1,
-                            components: [
-                                {
-                                    type: 2,
-                                    label: "나이 공개",
-                                    emoji: "🔓",
-                                    style: 1,
-                                    customId: "birthday-register-true",
-                                },
-                                {
-                                    type: 2,
-                                    label: "나이 비공개",
-                                    emoji: "🔒",
-                                    style: 2,
-                                    customId: "birthday-register-false",
-                                },
-                            ],
-                        },
-                    ],
-                });
+                    await sendRegisterHelper(channel, guildSetting.allowHideAge);
 
-                return;
+                    return await interaction.editReply({
+                        content: "메시지를 전송했어요.",
+                    });
+                } catch (e) {
+                    return await interaction.editReply({ content: `오류가 발생했어요. ${e}` });
+                }
             }
 
             case "테스트": {
@@ -801,7 +779,7 @@ module.exports = {
                 let createRole = false;
                 let createChannel = false;
                 let createSubRole = false;
-                let channel = interaction.options.getChannel("채널", false);
+                let channel = interaction.options.getChannel("채널", false) as TextChannel | null;
                 let role: Role;
 
                 if (!channel) {
@@ -824,7 +802,7 @@ module.exports = {
                             components: [
                                 {
                                     type: 2,
-                                    label: "아니오",
+                                    label: "아니요",
                                     style: 2,
                                     customId: `${interaction.id}-hideAge-false`,
                                 },
@@ -875,7 +853,7 @@ module.exports = {
                                         components: [
                                             {
                                                 type: 2,
-                                                label: "아니오",
+                                                label: "아니요",
                                                 style: 2,
                                                 customId: `${interaction.id}-subRole-false`,
                                             },
@@ -989,6 +967,16 @@ module.exports = {
                                 },
                                 { upsert: true }
                             );
+                            if (!channel) {
+                                await interaction.editReply({ content: "채널 생성 오류" });
+                                return;
+                            }
+                            try {
+                                await sendRegisterHelper(channel, guildSetting!.allowHideAge);
+                            } catch (e) {
+                                await interaction.editReply({ content: `오류가 발생했어요. ${e}` });
+                                return;
+                            }
                             await interaction.editReply({
                                 embeds: [
                                     {
