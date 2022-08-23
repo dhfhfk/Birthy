@@ -337,8 +337,7 @@ module.exports = {
                                                     }
 
                                                     if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
-                                                        await i.reply({
-                                                            ephemeral: true,
+                                                        await i.editReply({
                                                             embeds: [
                                                                 {
                                                                     color: 0xf56969,
@@ -387,8 +386,8 @@ module.exports = {
                                                                 description: "이제 이 서버에서 생일 알림을 받을 수 있어요.",
                                                                 fields: [
                                                                     {
-                                                                        name: "Q. 다른 서버에서도 생일 알림이 전송되나요?",
-                                                                        value: "`/생일 등록` 명령어를 사용하면 그 서버에서도 생일 알림이 전송될 거예요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 해당 서버에서 `/생일 서버설정` 명령어를 사용해주세요.",
+                                                                        name: "Q. 다른 서버에서도 제 생일을 확인할 수 있나요?",
+                                                                        value: "`/생일 등록` 명령어를 사용하면 그 서버에서도 생일이 공유될 거에요.\n만약 특정 서버에서 알림을 받고싶지 않으시다면 해당 서버에서 `/생일 서버설정` 명령어를 사용해주세요.",
                                                                         inline: false,
                                                                     },
                                                                 ],
@@ -411,7 +410,7 @@ module.exports = {
                                                         ],
                                                     });
                                                     if (birthday > new Date() || new Date().getFullYear() - birthday.getFullYear() > 100) {
-                                                        await i.followUp({ ephemeral: true, content: "연도가 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
+                                                        await i.followUp({ ephemeral: true, content: "생일이 이상하긴 하지만 뭔가 사연이 있으신 거겠죠?" });
                                                         return;
                                                     }
                                                     return;
@@ -512,7 +511,6 @@ module.exports = {
                                         {
                                             color: 0xf56969,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
-                                            description: "같이 해결해봐요.",
                                             fields: [
                                                 {
                                                     name: "해결법",
@@ -531,7 +529,6 @@ module.exports = {
                                         {
                                             color: 0xf56969,
                                             title: "<:xbold:985419129316065320> 아직 로그 채널을 지정하지 않으셨어요!",
-                                            description: "같이 해결해봐요.",
                                             fields: [
                                                 {
                                                     name: "해결법",
@@ -617,7 +614,7 @@ module.exports = {
                                     {
                                         color: 0xf5bed1,
                                         title: "<:cakeprogress:985470905314603018> 생일 알림 채널을 지정했어요",
-                                        description: "이제 멤버들이 자신의 생일을 등록할 수 있도록 알려주세요.",
+                                        description: "이제 멤버들이 `/생일 등록`명령어를 이용해 자신의 생일을 등록할 수 있도록 알려주세요.",
                                         fields: [
                                             {
                                                 name: "생일 알림 채널",
@@ -675,7 +672,6 @@ module.exports = {
                                         {
                                             color: 0xf56969,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
-                                            description: "같이 해결해봐요.",
                                             fields: [
                                                 {
                                                     name: "해결법",
@@ -753,7 +749,6 @@ module.exports = {
                                         {
                                             color: 0xf56969,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
-                                            description: "같이 해결해봐요.",
                                             fields: [
                                                 {
                                                     name: "해결법",
@@ -828,7 +823,6 @@ module.exports = {
                                         {
                                             color: 0xf56969,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
-                                            description: "같이 해결해봐요.",
                                             fields: [
                                                 {
                                                     name: "해결법",
@@ -1139,7 +1133,7 @@ module.exports = {
                                     {
                                         color: 0xf5bed1,
                                         title: "<:cakeprogress:985470905314603018> 생일 알림 셋업을 완료했어요!",
-                                        description: "이제 멤버들이 자신의 생일을 등록할 수 있도록 알려주세요.",
+                                        description: "이제 멤버들이 `/생일 등록`명령어를 이용해 자신의 생일을 등록할 수 있도록 알려주세요.",
                                         fields: [
                                             {
                                                 name: "생일 알림 채널",
@@ -1162,6 +1156,8 @@ module.exports = {
                                 ],
                                 components: [],
                             });
+                            await interaction.followUp({ ephemeral: true, content: "팁: `/생일알림 멤버 지정`으로 **멤버의 생일을 직접 지정**할 수 있어요. **빗금 명령어 사용법**을 모르는 멤버는 직접 지정해주세요." });
+                            await interaction.followUp({ ephemeral: true, content: "팁: `/생일알림 로그채널 지정`으로 **생일 등록 로그 메시지**를 전송할 수 있어요." });
                             if (role) await interaction.followUp({ ephemeral: true, content: `팁: \`서버 설정\` -> \`역할\`메뉴에서 <@&${role.id}>역할을 가장 위로 끌어올리면 생일인 멤버들을 목록 위에서 확인할 수 있어요.` });
                             return;
                         }
