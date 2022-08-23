@@ -391,7 +391,7 @@ module.exports = {
                             components: [
                                 {
                                     type: 2,
-                                    label: "아니오",
+                                    label: "아니요",
                                     emoji: "<:cakeprogress:985470905314603018>",
                                     style: 2,
                                     customId: "delete-false",
