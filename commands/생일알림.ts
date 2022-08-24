@@ -977,7 +977,7 @@ module.exports = {
                             try {
                                 await sendRegisterHelper(channel, allowHideAge);
                             } catch (e) {
-                                await interaction.editReply({ content: `오류가 발생했어요. ${e}` });
+                                await interaction.editReply({ content: `오류가 발생했어요. ${e}`, embeds: [] });
                                 return;
                             }
                             await interaction.editReply({
