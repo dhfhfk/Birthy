@@ -41,6 +41,12 @@ client.on("interactionCreate", async (interaction: Interaction) => {
         });
     }
 
+    if (interaction.isContextMenuCommand()) {
+        import(`../commands/${interaction.commandName}`).then(async (command) => {
+            if (command) command.run(client, interaction, interaction.locale);
+        });
+    }
+
     if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
         switch (interaction.commandName) {
             case "생일알림":
