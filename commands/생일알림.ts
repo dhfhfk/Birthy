@@ -818,6 +818,8 @@ module.exports = {
                     ],
                 });
 
+                let allowHideAge: boolean;
+
                 const filter = (i: MessageComponentInteraction) => i.customId.startsWith(interaction.id);
 
                 const collector = interaction.channel?.createMessageComponentCollector({ filter, time: 300000 });
@@ -827,6 +829,7 @@ module.exports = {
                     switch (options[1]) {
                         case "hideAge": {
                             await i.deferUpdate();
+                            allowHideAge = JSON.parse(options[2]);
                             await Settings.findByIdAndUpdate(
                                 interaction.guildId,
                                 {
@@ -972,7 +975,7 @@ module.exports = {
                                 return;
                             }
                             try {
-                                await sendRegisterHelper(channel, guildSetting!.allowHideAge);
+                                await sendRegisterHelper(channel, allowHideAge);
                             } catch (e) {
                                 await interaction.editReply({ content: `오류가 발생했어요. ${e}` });
                                 return;
