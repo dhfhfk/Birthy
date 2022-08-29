@@ -214,6 +214,27 @@ module.exports = {
                                     }
                                 }
 
+                                if (interaction.options.getString("나이공개", true) != "true" && interaction.options.getString("나이공개", true) != "false") {
+                                    return await interaction.reply({
+                                        ephemeral: true,
+                                        embeds: [
+                                            {
+                                                color: 0xf56969,
+                                                author: {
+                                                    name: targetUser.username,
+                                                    icon_url: targetUser.displayAvatarURL(),
+                                                },
+                                                title: "<:xbold:985419129316065320> 나이공개 옵션이 잘못 입력되었어요",
+                                                description: "옵션을 입력하지 말고 눌러서 선택해주세요.",
+                                                image: {
+                                                    url: "https://i.ibb.co/rdpGVVZ/2-allow-Show-Age-typing.png",
+                                                },
+                                                footer: { text: `${interaction.user.id} -> ${targetUser.id}` },
+                                            },
+                                        ],
+                                    });
+                                }
+
                                 const today = new Date();
                                 await interaction.showModal({
                                     title: "생일 등록",
