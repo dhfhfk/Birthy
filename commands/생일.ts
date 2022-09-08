@@ -2,6 +2,7 @@ import { Client, ChatInputCommandInteraction, ApplicationCommandOptionType } fro
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import { sendLogMessage } from "../utils/function";
+import { Colors } from "../models/Constants";
 
 module.exports = {
     name: "생일",
@@ -77,7 +78,7 @@ module.exports = {
                 ephemeral: true,
                 embeds: [
                     {
-                        color: 0xf56969,
+                        color: Colors.error,
                         title: "<:xbold:985419129316065320> 기본 생일 셋업이 되어있지 않아요!",
                         description: "서버 관리자가 직접 `/생일알림 셋업`명령어를 이용해 셋업을 진행해야 사용할 수 있어요.",
                         fields: [
@@ -100,7 +101,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -116,7 +117,7 @@ module.exports = {
                 await interaction.reply({
                     embeds: [
                         {
-                            color: 0xf5bed1,
+                            color: Colors.primary,
                             author: {
                                 name: interaction.member.nickname || interaction.user.username,
                                 icon_url: interaction.user.displayAvatarURL(),
@@ -134,7 +135,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -154,7 +155,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -204,7 +205,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -221,7 +222,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -241,7 +242,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -259,7 +260,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf5bed1,
+                                color: Colors.primary,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -283,7 +284,7 @@ module.exports = {
                     ephemeral: true,
                     embeds: [
                         {
-                            color: 0xf5bed1,
+                            color: Colors.primary,
                             author: {
                                 name: interaction.member.nickname || interaction.user.username,
                                 icon_url: interaction.user.displayAvatarURL(),
@@ -300,7 +301,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -317,7 +318,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf5bed1,
+                                color: Colors.primary,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -341,7 +342,7 @@ module.exports = {
                     ephemeral: true,
                     embeds: [
                         {
-                            color: 0xf5bed1,
+                            color: Colors.primary,
                             author: {
                                 name: interaction.member.nickname || interaction.user.username,
                                 icon_url: interaction.user.displayAvatarURL(),
@@ -359,7 +360,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -375,7 +376,7 @@ module.exports = {
                     ephemeral: true,
                     embeds: [
                         {
-                            color: 0xf5bed1,
+                            color: Colors.primary,
                             author: {
                                 name: interaction.member.nickname || interaction.user.username,
                                 icon_url: interaction.user.displayAvatarURL(),
@@ -415,7 +416,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -436,7 +437,7 @@ module.exports = {
                             ephemeral: true,
                             embeds: [
                                 {
-                                    color: 0xf5bed1,
+                                    color: Colors.primary,
                                     author: {
                                         name: interaction.member.nickname || interaction.user.username,
                                         icon_url: interaction.user.displayAvatarURL(),
@@ -460,7 +461,7 @@ module.exports = {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf5bed1,
+                                color: Colors.primary,
                                 author: {
                                     name: interaction.member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),

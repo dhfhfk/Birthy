@@ -5,6 +5,7 @@ import config from "../config";
 import { getLocaleString as t } from "../utils/localization";
 import Birthdays from "../models/birthdays";
 import { sendLogMessage } from "../utils/function";
+import { Colors } from "../models/Constants";
 
 client.on("interactionCreate", async (interaction: Interaction) => {
     // 빗금 명령어
@@ -20,7 +21,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         {
                             title: await t(interaction.locale, "permission_denied"),
                             description: await t(interaction.locale, "you_need_following_permission"),
-                            color: 0xf56969,
+                            color: Colors.error,
                             fields: [
                                 {
                                     name: await t(interaction.locale, "required_permission"),
@@ -124,7 +125,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 title: "<:xbold:985419129316065320> 기본 생일 셋업이 되어있지 않아요!",
                                 description: "서버 관리자가 직접 `/생일알림 셋업`명령어를 이용해 셋업을 진행해야 사용할 수 있어요.",
                                 fields: [
@@ -146,7 +147,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                             ephemeral: true,
                             embeds: [
                                 {
-                                    color: 0xf5bed1,
+                                    color: Colors.primary,
                                     author: {
                                         name: member.nickname || interaction.user.username,
                                         icon_url: interaction.user.displayAvatarURL(),
@@ -171,7 +172,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         ephemeral: true,
                         embeds: [
                             {
-                                color: 0xf5bed1,
+                                color: Colors.primary,
                                 author: {
                                     name: member.nickname || interaction.user.username,
                                     icon_url: interaction.user.displayAvatarURL(),
@@ -246,7 +247,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 ephemeral: true,
                 embeds: [
                     {
-                        color: 0xf56969,
+                        color: Colors.error,
                         author: {
                             name: member.nickname || interaction.user.username,
                             icon_url: interaction.user.displayAvatarURL(),
@@ -301,7 +302,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 ephemeral: true,
                 embeds: [
                     {
-                        color: 0xf5bed1,
+                        color: Colors.primary,
                         author: {
                             name: member.nickname || interaction.user.username,
                             icon_url: interaction.user.displayAvatarURL(),
@@ -359,7 +360,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
             ephemeral: true,
             embeds: [
                 {
-                    color: 0xf5bed1,
+                    color: Colors.primary,
                     author: {
                         name: member.nickname || interaction.user.username,
                         icon_url: interaction.user.displayAvatarURL(),

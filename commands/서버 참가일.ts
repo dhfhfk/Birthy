@@ -1,4 +1,5 @@
 import { Client, UserContextMenuCommandInteraction, ApplicationCommandType } from "discord.js";
+import { Colors } from "../models/Constants";
 
 module.exports = {
     name: "서버 참가일",
@@ -18,7 +19,7 @@ module.exports = {
             return await interaction.editReply({
                 embeds: [
                     {
-                        color: 0xf56969,
+                        color: Colors.error,
                         author: {
                             name: user.username,
                             icon_url: user.displayAvatarURL(),
@@ -32,7 +33,7 @@ module.exports = {
         if (!member.joinedAt || !member.joinedTimestamp) return;
         const diff = Math.abs((new Date().getTime() - member.joinedAt.getTime()) / (1000 * 60 * 60 * 24));
         const embed = {
-            color: 0xf5bed1,
+            color: Colors.primary,
             author: {
                 name: member.nickname || user.username,
                 icon_url: user.displayAvatarURL(),

@@ -1,4 +1,5 @@
 import { Client, UserContextMenuCommandInteraction, ApplicationCommandType } from "discord.js";
+import { Colors } from "../models/Constants";
 
 module.exports = {
     name: "계정 생성일",
@@ -14,7 +15,7 @@ module.exports = {
 
         const diff = Math.abs((new Date().getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24));
         const embed = {
-            color: 0xf5bed1,
+            color: Colors.primary,
             author: {
                 name: user.username,
                 icon_url: user.displayAvatarURL(),

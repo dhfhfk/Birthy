@@ -2,6 +2,7 @@ import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelT
 import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
 import { getAge, sendRegisterHelper } from "../utils/function";
+import { Colors } from "../models/Constants";
 
 module.exports = {
     name: "생일알림",
@@ -145,7 +146,7 @@ module.exports = {
                 },
                 {
                     name: "활성화",
-                    description: "[관리자] 탄생석, 별자리 역할기능을 활성화해요.",
+                    description: "[관리자] 탄생석, 별자리 역할을 활성화해요.",
                     type: ApplicationCommandOptionType.Subcommand,
                 },
             ],
@@ -183,7 +184,7 @@ module.exports = {
                                                 ephemeral: true,
                                                 embeds: [
                                                     {
-                                                        color: 0xf56969,
+                                                        color: Colors.error,
                                                         author: {
                                                             name: targetUser.username,
                                                             icon_url: targetUser.displayAvatarURL(),
@@ -200,7 +201,7 @@ module.exports = {
                                             ephemeral: true,
                                             embeds: [
                                                 {
-                                                    color: 0xf56969,
+                                                    color: Colors.error,
                                                     author: {
                                                         name: targetUser.username,
                                                         icon_url: targetUser.displayAvatarURL(),
@@ -219,7 +220,7 @@ module.exports = {
                                         ephemeral: true,
                                         embeds: [
                                             {
-                                                color: 0xf56969,
+                                                color: Colors.error,
                                                 author: {
                                                     name: targetUser.username,
                                                     icon_url: targetUser.displayAvatarURL(),
@@ -286,7 +287,7 @@ module.exports = {
                             await interaction.editReply({
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress:985470905314603018> 생일 로그 채널을 지정했어요",
                                         description: "이제 멤버들이 생일을 등록하면 메시지를 전송할게요.",
                                         fields: [
@@ -311,7 +312,7 @@ module.exports = {
                                             name: `${client.user.username} (${client.user.id})`,
                                             icon_url: client.user.displayAvatarURL(),
                                         },
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         description: `<:cakeprogress:985470905314603018> <@${client.user.id}> 생일 등록`,
                                         fields: [
                                             {
@@ -331,7 +332,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
                                             fields: [
                                                 {
@@ -349,7 +350,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 아직 로그 채널을 지정하지 않으셨어요!",
                                             fields: [
                                                 {
@@ -367,7 +368,7 @@ module.exports = {
                             return await interaction.editReply({
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress00:985470906891632701> 이제 로그를 전송하지 않을게요",
                                         footer: { text: `${interaction.user.id}` },
                                     },
@@ -387,7 +388,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 지정된 생일 알림 채널이 없어요!",
                                             description: "이러면 생일 알림 기능이 제대로 작동하지 않을 거예요! 같이 해결해봐요.",
                                             fields: [
@@ -405,7 +406,7 @@ module.exports = {
                             return await interaction.editReply({
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress:985470905314603018> 생일 알림 채널 정보예요.",
                                         fields: [
                                             {
@@ -434,7 +435,7 @@ module.exports = {
                                 ephemeral: true,
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress:985470905314603018> 생일 알림 채널을 지정했어요",
                                         description: "이제 멤버들이 `/생일 등록`명령어를 이용해 자신의 생일을 등록할 수 있도록 알려주세요.",
                                         fields: [
@@ -470,7 +471,7 @@ module.exports = {
                                 return await interaction.reply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 채널을 만들던 중 오류가 발생했어요.",
                                             description: String(e),
                                             footer: { text: interaction.guild.id },
@@ -492,7 +493,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
                                             fields: [
                                                 {
@@ -511,7 +512,7 @@ module.exports = {
                             //     return await interaction.editReply({
                             //         embeds: [
                             //             {
-                            //                 color: 0xf56969,
+                            //                 color: Colors.error,
                             //                 title: "<:xbold:985419129316065320> 이미 별자리, 탄생석 기능이 비활성화되어있어요!",
                             //                 description: "혹시 활성화시키고 싶으시다면 제가 도와드릴게요.",
                             //                 fields: [
@@ -538,7 +539,7 @@ module.exports = {
                             // return await interaction.editReply({
                             //     embeds: [
                             //         {
-                            //             color: 0xf5bed1,
+                            //             color: Colors.primary,
                             //             title: "<:cakeprogress:985470905314603018> 제가 등록했던 역할 정보예요.",
                             //             fields: [
                             //                 {
@@ -569,7 +570,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
                                             fields: [
                                                 {
@@ -587,7 +588,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 이미 별자리, 탄생석 기능이 비활성화되어있어요!",
                                             description: "혹시 활성화시키고 싶으시다면 제가 도와드릴게요.",
                                             fields: [
@@ -627,7 +628,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf5bed1,
+                                            color: Colors.primary,
                                             title: "<:cakeprogress:985470905314603018> 모든 역할을 삭제했어요.",
                                             description: "이제 탄생석, 별자리 역할 기능을 사용하지 않을 거예요.",
                                             footer: { text: interaction.guild.id },
@@ -638,12 +639,11 @@ module.exports = {
                             return;
                         }
                         case "활성화": {
-                            //
                             if (!guildSetting) {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
                                             fields: [
                                                 {
@@ -661,7 +661,7 @@ module.exports = {
                                 return await interaction.editReply({
                                     embeds: [
                                         {
-                                            color: 0xf56969,
+                                            color: Colors.error,
                                             title: "<:xbold:985419129316065320> 이미 별자리, 탄생석 기능이 활성화되어있어요!",
                                             description: "혹시 비활성화시키고 싶으시다면 제가 도와드릴게요.",
                                             fields: [
@@ -687,7 +687,7 @@ module.exports = {
                             return await interaction.editReply({
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress:985470905314603018> 별자리, 탄생석 기능을 활성화했어요.",
                                         description: "멤버의 선택에 따라 역할을 부여할게요.",
                                         footer: { text: interaction.guild.id },
@@ -709,7 +709,7 @@ module.exports = {
                     return await interaction.editReply({
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 title: "<:xbold:985419129316065320> 기본 생일 셋업이 되어있지 않아요!",
                                 description: "서버 관리자가 직접 `/생일알림 셋업`명령어를 이용해 셋업을 진행해야 사용할 수 있어요.",
                                 fields: [
@@ -747,7 +747,7 @@ module.exports = {
                     return await interaction.editReply({
                         embeds: [
                             {
-                                color: 0xf56969,
+                                color: Colors.error,
                                 title: "<:xbold:985419129316065320> 지정된 생일 알림 채널이 없어요!",
                                 description: "이러면 생일 알림 기능이 제대로 작동하지 않을 거예요! 같이 해결해봐요.",
                                 fields: [
@@ -769,7 +769,7 @@ module.exports = {
                         content: "`@here`",
                         embeds: [
                             {
-                                color: 0xf5bed1,
+                                color: Colors.primary,
                                 title: `<:cakeprogress:985470905314603018> 오늘은 ${client.user?.username}님의 ${getAge(new Date("2022-04-30")).western}번째 생일이에요!`,
                                 description: `<@${client.user?.id}>님의 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?`,
                                 fields: [
@@ -811,7 +811,7 @@ module.exports = {
                     ephemeral: true,
                     embeds: [
                         {
-                            color: 0xf5bed1,
+                            color: Colors.primary,
                             title: "<:cakeprogress00:985470906891632701> 서버의 멤버들이 나이를 숨길 수 있도록 할까요?",
                             description: "허용하면 멤버가 생일을 등록할 때 공개 여부를 선택할 수 있어요.",
                             footer: { text: `${interaction.guildId} 1/3 나이 숨기기` },
@@ -862,7 +862,7 @@ module.exports = {
                             await interaction.editReply({
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress02:985470913938071642> 별자리, 탄생석 역할을 만들어드릴까요?",
                                         description: "자세한 정보는 아래 이미지를 참조해주세요.",
                                         image: {
@@ -900,7 +900,7 @@ module.exports = {
                             await interaction.editReply({
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress03:985470915540291624> 멤버 목록에서 생일인 멤버를 따로 확인할 수 있는 역할을 만들어드릴까요?",
                                         description: "자세한 정보는 아래 이미지를 참조해주세요.",
                                         image: {
@@ -946,7 +946,7 @@ module.exports = {
                                     await interaction.editReply({
                                         embeds: [
                                             {
-                                                color: 0xf56969,
+                                                color: Colors.error,
                                                 title: "<:xbold:985419129316065320> 채널을 생성하던 중 오류가 발생했어요",
                                                 description: String(e),
                                                 footer: { text: interaction.guild.id },
@@ -973,7 +973,7 @@ module.exports = {
                                         name: "🎂오늘 생일",
                                         position: interaction.guild.roles.highest.position - 1,
                                         permissions: [],
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         hoist: true,
                                     });
                                 } catch {
@@ -1004,7 +1004,7 @@ module.exports = {
                             await interaction.editReply({
                                 embeds: [
                                     {
-                                        color: 0xf5bed1,
+                                        color: Colors.primary,
                                         title: "<:cakeprogress:985470905314603018> 생일 알림 셋업을 완료했어요!",
                                         description: "이제 멤버들이 `/생일 등록`명령어를 이용해 자신의 생일을 등록할 수 있도록 알려주세요.",
                                         fields: [

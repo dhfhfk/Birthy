@@ -1,30 +1,31 @@
-import { APIEmbed, ChannelType, Snowflake, TextChannel } from "discord.js";
+import { APIEmbed, ChannelType, Guild, Role, Snowflake, TextChannel } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
 import { getLocaleString as t } from "../utils/localization";
 import TodayBirthdays from "../models/today-birthdays";
 import config from "../config";
+import { Colors } from "../models/Constants";
 
 const status: { [key: string]: { name: string; color: number; emoji: string } } = {
     register: {
         name: "등록",
-        color: 0xf5bed1,
+        color: Colors.primary,
         emoji: "<:cakeprogress:985470905314603018>",
     },
     change: {
         name: "변경",
-        color: 0xf5bed1,
+        color: Colors.primary,
         emoji: "<:cakeprogress:985470905314603018>",
     },
     remove: {
         name: "삭제",
-        color: 0xf56969,
+        color: Colors.error,
         emoji: "<:cakeprogress00:985470906891632701>",
     },
     unregister: {
         name: "서버 설정 해제",
-        color: 0xf56969,
+        color: Colors.error,
         emoji: "<:cakeprogress00:985470906891632701>",
     },
 };
@@ -109,7 +110,7 @@ export async function sendRegisterHelper(channel: TextChannel, allowHideAge: boo
     const contents: any = {
         embeds: [
             {
-                color: 0xf5bed1,
+                color: Colors.primary,
                 title: "🎂 생일 등록하기",
                 description: "생일을 등록하면 멤버들과 서로의 생일을 공유하고 축하해줄 수 있어요.\n아래 버튼을 선택하면 생일 입력 창이 표시될 거예요.",
                 fields: [
@@ -194,8 +195,8 @@ export async function sendBirthMessage(userId: string): Promise<{ success: boole
             content: "@here",
             embeds: [
                 {
-                    color: 0xf5bed1,
-                    title: `<:cakeprogress:985470905314603018> 오늘은 ${member.nickname || member.user.username} 님의 ${userGuild.allowShowAge ? `${getAge(birthday.date).western}번째 ` : ""}생일이에요!`,
+                    color: Colors.primary,
+                    title: `<:cakeprogress:985470905314603018> 오늘은 ${member.nickname || member.user.username}님의 ${userGuild.allowShowAge ? `${getAge(birthday.date).western}번째 ` : ""}생일이에요!`,
                     description: `<@${member.id}>님의 생일을 축하하는 메시지 하나 남겨보는건 어떨까요?`,
                 },
             ],
