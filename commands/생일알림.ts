@@ -1,7 +1,7 @@
 import { Client, CommandInteraction, MessageComponentInteraction, Role, ChannelType, ApplicationCommandOptionType, GuildMember, TextChannel } from "discord.js";
 import Birthdays from "../models/birthdays";
 import Settings from "../models/guild-settings";
-import { getAge, sendRegisterHelper } from "../utils/function";
+import { createBirthdayRole, getAge, sendRegisterHelper } from "../utils/function";
 import { Colors } from "../models/Constants";
 
 module.exports = {
@@ -147,6 +147,23 @@ module.exports = {
                 {
                     name: "활성화",
                     description: "[관리자] 탄생석, 별자리 역할을 활성화해요.",
+                    type: ApplicationCommandOptionType.Subcommand,
+                },
+            ],
+        },
+        {
+            name: "생일역할",
+            description: "[관리자]",
+            type: ApplicationCommandOptionType.SubcommandGroup,
+            options: [
+                {
+                    name: "비활성화",
+                    description: "[관리자] Birth가 등록했던 생일 역할을 삭제하고 비활성화해요.",
+                    type: ApplicationCommandOptionType.Subcommand,
+                },
+                {
+                    name: "활성화",
+                    description: "[관리자] 생일 역할을 활성화해요.",
                     type: ApplicationCommandOptionType.Subcommand,
                 },
             ],
@@ -479,6 +496,108 @@ module.exports = {
                                     ],
                                 });
                             }
+                        }
+                    }
+                    return;
+                }
+                case "생일역할": {
+                    await interaction.deferReply({ ephemeral: true });
+                    let role;
+                    switch (interaction.options.getSubcommand()) {
+                        case "활성화": {
+                            if (!guildSetting) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: Colors.error,
+                                            title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            try {
+                                role = await createBirthdayRole(interaction.guild);
+                                await guildSetting.updateOne({ roleId: role.id });
+                            } catch (e) {
+                                await interaction.editReply({ content: `오류가 발생했어요. ${e}`, embeds: [] });
+                                return;
+                            }
+                            await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: Colors.primary,
+                                        title: "<:cakeprogress:985470905314603018> 생일 역할을 지정했어요",
+                                        description: "이제 생일이 되면 멤버에게 특별한 역할을 부여하고 알아서 빼드릴게요.",
+                                        fields: [
+                                            {
+                                                name: "생일 역할",
+                                                value: `<@&${role.id}>`,
+                                                inline: false,
+                                            },
+                                        ],
+                                        footer: { text: interaction.guild.id },
+                                    },
+                                ],
+                            });
+                            await interaction.followUp({ ephemeral: true, content: `팁: \`서버 설정\` -> \`역할\`메뉴에서 <@&${role.id}>역할을 가장 위로 끌어올리면 생일인 멤버들을 목록 위에서 확인할 수 있어요.` });
+                            return;
+                        }
+                        case "비활성화": {
+                            if (!guildSetting) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: Colors.error,
+                                            title: "<:xbold:985419129316065320> 아직 셋업을 진행하지 않으셨어요!",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 셋업`명령어로 기본적인 셋업을 진행해주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            if (!guildSetting.roleId) {
+                                return await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: Colors.error,
+                                            title: "<:xbold:985419129316065320> 아직 생일 역할을 활성화하지 않으셨어요!",
+                                            fields: [
+                                                {
+                                                    name: "해결법",
+                                                    value: "`/생일알림 생일역할 활성화`명령어로 생일 역할을 만들어주세요.",
+                                                    inline: false,
+                                                },
+                                            ],
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                            }
+                            await interaction.guild.roles.delete(guildSetting.roleId);
+                            await guildSetting.updateOne({ $unset: { roleId: 1 } });
+                            return await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: Colors.primary,
+                                        title: "<:cakeprogress00:985470906891632701> 이제 생일 역할을 사용하지 않을게요",
+                                        footer: { text: `${interaction.user.id}` },
+                                    },
+                                ],
+                            });
                         }
                     }
                     return;
@@ -968,14 +1087,7 @@ module.exports = {
                                 }
 
                                 try {
-                                    // 가능하다면 가장 높은 위치로
-                                    role = await interaction.guild.roles.create({
-                                        name: "🎂오늘 생일",
-                                        position: interaction.guild.roles.highest.position - 1,
-                                        permissions: [],
-                                        color: Colors.primary,
-                                        hoist: true,
-                                    });
+                                    role = await createBirthdayRole(interaction.guild);
                                 } catch {
                                     //
                                 }

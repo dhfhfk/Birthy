@@ -1,4 +1,4 @@
-import { APIEmbed, ChannelType, Guild, Role, Snowflake, TextChannel } from "discord.js";
+import { APIEmbed, ChannelType, Guild, MessageOptions, Role, Snowflake, TextChannel } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
@@ -107,7 +107,7 @@ export async function sendLogMessage(guildId: Snowflake, type: string, userId: S
  * @param {Snowflake} channel 메시지를 전송할 채널
  */
 export async function sendRegisterHelper(channel: TextChannel, allowHideAge: boolean) {
-    const contents: any = {
+    const contents: MessageOptions = {
         embeds: [
             {
                 color: Colors.primary,
@@ -252,6 +252,19 @@ export function getNextBirthday(birthday: Date): { rawDate: Date; unix: string }
     if (new Date() == nextBirthday) nextBirthday = new Date();
     if (new Date() > nextBirthday) nextBirthday = new Date(new Date().getFullYear() + 1, birthday.getMonth(), birthday.getDate());
     return { rawDate: nextBirthday, unix: Math.floor(nextBirthday.getTime() / 1000).toFixed(0) };
+}
+
+/**
+ * 생일 역할을 생성합니다.
+ */
+export async function createBirthdayRole(guild: Guild): Promise<Role> {
+    const role = await guild.roles.create({
+        name: "🎂오늘 생일",
+        permissions: [],
+        color: Colors.primary,
+        hoist: true,
+    });
+    return role;
 }
 
 /**
