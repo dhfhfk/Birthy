@@ -6,7 +6,8 @@
     "scripts": {
         "start": "ts-node --files bot.ts",
         "dev": "nodemon bot.ts",
-        "build": "tsc --project tsconfig.json"
+        "build": "tsc --project tsconfig.json",
+        "deploy-commands": "ts-node --files deploy-commands.ts"
     },
     "keywords": [],
     "author": {
