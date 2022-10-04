@@ -1,5 +1,6 @@
 export interface Config {
     token: string;
+    client_id: string;
     mongodb_uri: string;
     languages: string[];
     dev_guilds: string[];
