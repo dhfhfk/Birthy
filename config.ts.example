@@ -11,4 +11,10 @@ export default {
     dev_users: ["0000000000000000"],
     support_server_uri: "",
     koreanbots_token: process.env.KOREANBOTS_TOKEN,
+    influx_db: {
+        url: process.env.INFLUXDB_URI,
+        org: process.env.INFLUXDB_ORG,
+        bucket: process.env.INFLUXDB_BUCKET,
+        token: process.env.INFLUXDB_TOKEN
+    }
 } as Config;

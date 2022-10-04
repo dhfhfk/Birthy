@@ -7,4 +7,10 @@ export interface Config {
     dev_users: string[];
     support_server_uri: string;
     koreanbots_token: string;
+    influx_db: {
+        url: string;
+        org: string;
+        bucket: string;
+        token: string;
+    };
 }

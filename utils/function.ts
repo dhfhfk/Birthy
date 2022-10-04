@@ -6,6 +6,8 @@ import { getLocaleString as t } from "../utils/localization";
 import TodayBirthdays from "../models/today-birthdays";
 import config from "../config";
 import { Colors } from "../models/Constants";
+import { getWriteApi } from "../handlers/influx";
+import { Point } from "@influxdata/influxdb-client";
 
 const status: { [key: string]: { name: string; color: number; emoji: string } } = {
     register: {
@@ -47,6 +49,11 @@ export async function sendLogMessage(guildId: Snowflake, type: string, userId: S
 
     const member = await logChannel.guild.members.fetch(userId);
     if (!member) return;
+
+    const writeApi = getWriteApi("main");
+    const birthdaysPoint = new Point("birthdays");
+
+    birthdaysPoint.tag("type", type).tag("guild", guildId);
 
     const embed: APIEmbed = {
         author: {
@@ -96,6 +103,17 @@ export async function sendLogMessage(guildId: Snowflake, type: string, userId: S
             });
             break;
         }
+    }
+    birthdaysPoint.intField("success", 1);
+    writeApi.writePoint(birthdaysPoint);
+    try {
+        await writeApi.close();
+    } catch (e: any) {
+        console.error(e);
+        if (e.statusCode === 401) {
+            console.log("Please setup a InfluxDB.");
+        }
+        console.log("\nFinished ERROR");
     }
     await logChannel.send({
         embeds: [embed],
