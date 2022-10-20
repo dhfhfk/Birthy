@@ -256,7 +256,7 @@ module.exports = {
                                 const today = new Date();
                                 await interaction.showModal({
                                     title: "생일 등록",
-                                    customId: `birthday-${guildSetting?.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true}`,
+                                    customId: `birthday-${guildSetting?.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true}-${targetUser.id}`,
                                     components: [
                                         {
                                             type: 1,
