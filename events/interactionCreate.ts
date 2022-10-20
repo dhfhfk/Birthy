@@ -1,4 +1,4 @@
-import { GuildMember, GuildMemberBannerFormat, Interaction, InteractionType } from "discord.js";
+import { GuildMember, Interaction, InteractionType } from "discord.js";
 import client from "../bot";
 import Settings from "../models/guild-settings";
 import config from "../config";
@@ -212,7 +212,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     const today = new Date();
                     await interaction.showModal({
                         title: "생일 등록",
-                        customId: `birthday-${guildSetting.allowHideAge ? allowShowAge : true}`,
+                        customId: `birthday-${guildSetting.allowHideAge ? allowShowAge : true}-${interaction.user.id}`,
                         components: [
                             {
                                 type: 1,
@@ -248,16 +248,44 @@ client.on("interactionCreate", async (interaction: Interaction) => {
             if (!interaction.guildId) return;
 
             const guildSetting = await Settings.findById(interaction.guild.id);
+
             if (!guildSetting) return;
-            const change = interaction.customId.split("-")[2];
+            const change = interaction.customId.split("-")[1] === "change";
 
             let allowShowAge;
+            const targetUserId = interaction.customId.split("-")[2];
 
             if (!change) {
                 allowShowAge = JSON.parse(interaction.customId.split("-")[1]);
             }
 
-            const member = interaction.member as GuildMember;
+            const member = await interaction.guild.members.fetch(targetUserId);
+
+            if (member.user.bot) {
+                await interaction.reply({
+                    ephemeral: true,
+                    embeds: [
+                        {
+                            color: Colors.error,
+                            author: {
+                                name: member.nickname || member.user.username,
+                                icon_url: member.displayAvatarURL(),
+                            },
+                            title: "<:xbold:985419129316065320> 봇의 생일은 지정할 수 없어요",
+                            fields: [
+                                {
+                                    name: "해결법",
+                                    value: "올바른 멤버를 선택해주세요!",
+                                    inline: false,
+                                },
+                            ],
+                            footer: { text: `${member.user.id}` },
+                        },
+                    ],
+                });
+                return;
+            }
+
             const rawDate = interaction.fields.getTextInputValue("birthday");
             const year = Number(rawDate.substring(0, 4));
             if (isNaN(year) || year > new Date().getFullYear()) {
@@ -267,8 +295,8 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         {
                             color: Colors.error,
                             author: {
-                                name: member.nickname || interaction.user.username,
-                                icon_url: interaction.user.displayAvatarURL(),
+                                name: member.nickname || member.user.username,
+                                icon_url: member.displayAvatarURL(),
                             },
                             title: "<:xbold:985419129316065320> 날짜가 잘못 입력되었어요",
                             fields: [
@@ -278,7 +306,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                                     inline: false,
                                 },
                             ],
-                            footer: { text: `${interaction.user.id}` },
+                            footer: { text: `${member.user.id}` },
                         },
                     ],
                 });
@@ -289,13 +317,13 @@ client.on("interactionCreate", async (interaction: Interaction) => {
             const birthday = new Date(year, month - 1, day + 0);
             birthday.setHours(birthday.getHours() + 9);
             if (change) {
-                const prevBirthday = await Birthdays.findById(interaction.user.id);
+                const prevBirthday = await Birthdays.findById(member.user.id);
                 if (!prevBirthday) return;
                 const prevBirthdayDate = prevBirthday.date;
 
                 await prevBirthday?.updateOne(
                     {
-                        _id: interaction.user.id,
+                        _id: member.user.id,
                         lastModifiedAt: new Date(),
                         $inc: { modifiedCount: 1 },
                         date: birthday,
@@ -304,13 +332,13 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     },
                     { upsert: true }
                 );
-                const decModifiedCount = client.agenda.create("dec modifiedCount", { userId: interaction.user.id });
+                const decModifiedCount = client.agenda.create("dec modifiedCount", { userId: member.user.id });
                 decModifiedCount.schedule("1 month after");
                 await decModifiedCount.save();
                 const userGuildData: { _id: string; allowShowAge: boolean } | undefined = prevBirthday.guilds.find((guild) => {
                     return guild._id == interaction.guildId;
                 });
-                await sendLogMessage(interaction.guildId, "change", interaction.user.id, {
+                await sendLogMessage(interaction.guildId, "change", member.user.id, {
                     birthday: birthday,
                     prevBirthday: prevBirthdayDate,
                     allowShowAge: userGuildData?.allowShowAge,
@@ -321,8 +349,8 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                         {
                             color: Colors.primary,
                             author: {
-                                name: member.nickname || interaction.user.username,
-                                icon_url: interaction.user.displayAvatarURL(),
+                                name: member.nickname || member.user.username,
+                                icon_url: member.user.displayAvatarURL(),
                             },
                             title: "<:cakeprogress:985470905314603018> 생일을 변경했어요!",
                             description: `생일이 ${birthday.getFullYear()}년 ${("0" + (birthday.getMonth() + 1)).slice(-2)}월 ${("0" + birthday.getDate()).slice(-2)}일로 공유될 거예요.`,
@@ -351,9 +379,9 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 return;
             }
             await Birthdays.findByIdAndUpdate(
-                interaction.user.id,
+                member.user.id,
                 {
-                    _id: interaction.user.id,
+                    _id: member.user.id,
                     lastModifiedAt: new Date(),
                     modifiedCount: 0,
                     date: birthday,
@@ -364,9 +392,9 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 { upsert: true }
             );
             await Settings.findByIdAndUpdate(interaction.guildId, {
-                $addToSet: { members: interaction.user.id },
+                $addToSet: { members: member.user.id },
             });
-            await sendLogMessage(interaction.guildId, "register", interaction.user.id, {
+            await sendLogMessage(interaction.guildId, "register", member.user.id, {
                 birthday: birthday,
                 allowShowAge: guildSetting.allowHideAge ? allowShowAge : true,
             });
@@ -376,8 +404,8 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     {
                         color: Colors.primary,
                         author: {
-                            name: member.nickname || interaction.user.username,
-                            icon_url: interaction.user.displayAvatarURL(),
+                            name: member.nickname || member.user.username,
+                            icon_url: member.user.displayAvatarURL(),
                         },
                         title: "<:cakeprogress:985470905314603018> 생일을 등록했어요!",
                         description: `이제 생일이 ${(guildSetting.allowHideAge ? allowShowAge : true) && `${birthday.getFullYear()}년`} ${("0" + (birthday.getMonth() + 1)).slice(-2)}월 ${("0" + birthday.getDate()).slice(
