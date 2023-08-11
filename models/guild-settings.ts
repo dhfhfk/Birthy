@@ -8,8 +8,8 @@ export interface ISettings extends mongoose.Document {
     logChannelId: string;
     roleId: string;
     subRole: boolean;
-    zodiacRoles: [{ name: string; _id: string }];
-    birthstoneRoles: [{ name: string; _id: string }];
+    zodiacRoles: [{ _id: string, roleId: string }];
+    birthstoneRoles: [{ _id: string, roleId: string }];
     allowHideAge: boolean;
     allowCeleMessage: boolean;
     isPremium: boolean;
@@ -27,14 +27,14 @@ export const SettingsSchema = new mongoose.Schema(
         subRole: Boolean,
         zodiacRoles: [
             {
-                name: String,
                 _id: String,
+                roleId: String,
             },
         ],
         birthstoneRoles: [
             {
-                name: String,
                 _id: String,
+                roleId: String,
             },
         ],
         allowHideAge: Boolean,
