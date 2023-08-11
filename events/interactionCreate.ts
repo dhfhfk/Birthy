@@ -4,7 +4,7 @@ import Settings from "../models/guild-settings";
 import config from "../config";
 import { getLocaleString as t } from "../utils/localization";
 import Birthdays from "../models/birthdays";
-import { sendLogMessage } from "../utils/function";
+import { getBirthstone, getZodiac, sendLogMessage } from "../utils/function";
 import { Colors } from "../models/Constants";
 import { getWriteApi } from "../handlers/influx";
 import { Point } from "@influxdata/influxdb-client";
@@ -170,16 +170,57 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                                             icon_url: interaction.user.displayAvatarURL(),
                                         },
                                         title: "<:cakeprogress:985470905314603018> 이미 생일이 등록되어있어요!",
-                                        description: "만약 생일을 변경하고 싶으시다면 `/생일 변경` 명령어를 사용해주세요.",
+                                        description: "만약 생일을 변경하려 하신다면 `/생일 변경` 명령어를 사용해주세요.",
                                         footer: { text: `${interaction.user.id}` },
                                     },
                                 ],
                             });
                             return;
                         }
+                        const roles = [];
+                        if (guildSetting.subRole) {
+                            const zodiac = getZodiac(userData.date);
+                            const zodiacRoleId = guildSetting.zodiacRoles.find(obj => obj._id === zodiac.id)?.roleId;
+                            const zodiacRole = zodiacRoleId ? await interaction.guild.roles.fetch(zodiacRoleId) : undefined;
+                            if (!zodiacRole) {
+                                const role = await interaction.guild.roles.create({
+                                    name: `${zodiac.emoji} ${zodiac.name}`,
+                                    color: zodiac.color,
+                                    hoist: false,
+                                });
+                                roles.push(role.id);
+                                await Settings.findByIdAndUpdate(interaction.guildId, {
+                                    $addToSet: { _zodiacRoles: { id: zodiac.id, roleId: role.id } },
+                                });
+                                await member.roles.add(role);
+                            } else {
+                                roles.push(zodiacRole.id);
+                                await member.roles.add(zodiacRole);
+                            }
+
+                            const birthStone = getBirthstone(userData.date);
+                            const birthstoneRoleId = guildSetting.birthstoneRoles.find(obj => obj._id === birthStone.id)?.roleId;
+                            const birthstoneRole = birthstoneRoleId ? await interaction.guild.roles.fetch(birthstoneRoleId) : undefined;
+                            if (!birthstoneRole) {
+                                const role = await interaction.guild.roles.create({
+                                    name: birthStone.name,
+                                    color: birthStone.color,
+                                    hoist: false,
+                                });
+                                roles.push(role.id);
+                                await Settings.findByIdAndUpdate(interaction.guildId, {
+                                    $addToSet: { birthstoneRoles: { _id: birthStone.id, roleId: role.id } },
+                                });
+                                await member.roles.add(role);
+                            } else {
+                                roles.push(birthstoneRole.id);
+                                await member.roles.add(birthstoneRole);
+                            }
+
+                        }
                         await Birthdays.findByIdAndUpdate(interaction.user.id, {
                             _id: interaction.user.id,
-                            $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? allowShowAge : true } },
+                            $addToSet: { roles: { $each: roles }, guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? allowShowAge : true } },
                         });
                         await Settings.findByIdAndUpdate(interaction.guildId, {
                             $addToSet: { members: interaction.user.id },
@@ -321,17 +362,65 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 if (!prevBirthday) return;
                 const prevBirthdayDate = prevBirthday.date;
 
-                await prevBirthday?.updateOne(
+                await prevBirthday.updateOne({ roles: [] });
+                const roles = [];
+                if (guildSetting.subRole) {
+                    const zodiac = getZodiac(birthday);
+                    const zodiacRoleId = guildSetting.zodiacRoles.find(obj => obj._id === zodiac.id)?.roleId;
+                    const zodiacRole = zodiacRoleId ? await interaction.guild.roles.fetch(zodiacRoleId) : undefined;
+                    if (!zodiacRole) {
+                        const role = await interaction.guild.roles.create({
+                            name: `${zodiac.emoji} ${zodiac.name}`,
+                            color: zodiac.color,
+                            hoist: false,
+                        });
+                        roles.push(role.id);
+                        await Settings.findByIdAndUpdate(interaction.guildId, {
+                            $addToSet: { zodiacRoles: { _id: zodiac.id, roleId: role.id } },
+                        });
+                        await member.roles.add(role);
+                    } else {
+                        roles.push(zodiacRole.id);
+                        await member.roles.add(zodiacRole);
+                    }
+
+                    const birthStone = getBirthstone(birthday);
+                    const birthstoneRoleId = guildSetting.birthstoneRoles.find(obj => obj._id === birthStone.id)?.roleId;
+                    const birthstoneRole = birthstoneRoleId ? await interaction.guild.roles.fetch(birthstoneRoleId) : undefined;
+                    if (!birthstoneRole) {
+                        const role = await interaction.guild.roles.create({
+                            name: birthStone.name,
+                            color: birthStone.color,
+                            hoist: false,
+                        });
+                        roles.push(role.id);
+                        await Settings.findByIdAndUpdate(interaction.guildId, {
+                            $addToSet: { birthstoneRoles: { _id: birthStone.id, roleId: role.id } },
+                        });
+                        await member.roles.add(role);
+                    } else {
+                        roles.push(birthstoneRole.id);
+                        await member.roles.add(birthstoneRole);
+                    }
+
+                }
+                await prevBirthday.updateOne(
                     {
                         _id: member.user.id,
                         lastModifiedAt: new Date(),
                         $inc: { modifiedCount: 1 },
                         date: birthday,
+                        roles,
                         month: ("0" + (birthday.getMonth() + 1)).slice(-2),
                         day: ("0" + birthday.getDate()).slice(-2),
                     },
                     { upsert: true }
                 );
+                if (guildSetting.subRole && prevBirthday.roles.length > 0) {
+                    prevBirthday.roles.forEach(async (roleId) => {
+                        await member.roles.remove(roleId);
+                    });
+                }
                 const decModifiedCount = client.agenda.create("dec modifiedCount", { userId: member.user.id });
                 decModifiedCount.schedule("1 month after");
                 await decModifiedCount.save();
@@ -378,6 +467,47 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 }
                 return;
             }
+            const roles = [];
+            if (guildSetting.subRole) {
+                const zodiac = getZodiac(birthday);
+                const zodiacRoleId = guildSetting.zodiacRoles.find(obj => obj._id === zodiac.id)?.roleId;
+                const zodiacRole = zodiacRoleId ? await interaction.guild.roles.fetch(zodiacRoleId) : undefined;
+                if (!zodiacRole) {
+                    const role = await interaction.guild.roles.create({
+                        name: `${zodiac.emoji} ${zodiac.name}`,
+                        color: zodiac.color,
+                        hoist: false,
+                    });
+                    roles.push(role.id);
+                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                        $addToSet: { zodiacRoles: { _id: zodiac.id, roleId: role.id } },
+                    });
+                    await member.roles.add(role);
+                } else {
+                    roles.push(zodiacRole.id);
+                    await member.roles.add(zodiacRole);
+                }
+
+                const birthStone = getBirthstone(birthday);
+                const birthstoneRoleId = guildSetting.birthstoneRoles.find(obj => obj._id === birthStone.id)?.roleId;
+                const birthstoneRole = birthstoneRoleId ? await interaction.guild.roles.fetch(birthstoneRoleId) : undefined;
+                if (!birthstoneRole) {
+                    const role = await interaction.guild.roles.create({
+                        name: birthStone.name,
+                        color: birthStone.color,
+                        hoist: false,
+                    });
+                    roles.push(role.id);
+                    await Settings.findByIdAndUpdate(interaction.guildId, {
+                        $addToSet: { birthstoneRoles: { _id: birthStone.id, roleId: role.id } },
+                    });
+                    await member.roles.add(role);
+                } else {
+                    roles.push(birthstoneRole.id);
+                    await member.roles.add(birthstoneRole);
+                }
+
+            }
             await Birthdays.findByIdAndUpdate(
                 member.user.id,
                 {
@@ -387,7 +517,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     date: birthday,
                     month: ("0" + (birthday.getMonth() + 1)).slice(-2),
                     day: ("0" + birthday.getDate()).slice(-2),
-                    $addToSet: { guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? allowShowAge : true } },
+                    $addToSet: { roles: { $each: roles }, guilds: { _id: interaction.guildId, allowShowAge: guildSetting.allowHideAge ? allowShowAge : true } },
                 },
                 { upsert: true }
             );

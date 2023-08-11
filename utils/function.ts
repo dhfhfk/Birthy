@@ -1,4 +1,4 @@
-import { APIEmbed, ChannelType, Guild, MessageOptions, Role, Snowflake, TextChannel } from "discord.js";
+import { APIEmbed, ChannelType, Guild, MessageCreateOptions, Role, Snowflake, TextChannel } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
@@ -32,7 +32,46 @@ const status: { [key: string]: { name: string; color: number; emoji: string } } 
     },
 };
 
-export { status };
+const birthstones: {
+    id: string;
+    name: string;
+    color: number;
+}[] = [
+        { id: "garnet", name: "석류석", color: 0x952929 },
+        { id: "amethyst", name: "자수정", color: 0x9463c6 },
+        { id: "aquamarine", name: "아쿠아마린", color: 0x7bf7cd },
+        { id: "diamond", name: "다이아몬드", color: 0xd2e4ec },
+        { id: "emerald", name: "에메랄드", color: 0x4dc274 },
+        { id: "pearl", name: "진주", color: 0xdbd8cb },
+        { id: "ruby", name: "루비", color: 0xd9105c },
+        { id: "peridot", name: "페리도트", color: 0xaebe23 },
+        { id: "sapphire", name: "사파이어", color: 0x0f4fb4 },
+        { id: "opal", name: "오팔", color: 0xa3bdb6 },
+        { id: "topaz", name: "토파즈", color: 0xf7c278 },
+        { id: "tanzanite", name: "탄자나이트", color: 0x39497b },
+    ];
+
+const zodiacs: {
+    id: string;
+    name: string;
+    color: number;
+    emoji: string;
+}[] = [
+        { id: "capricorn", name: "염소자리", color: 0x707070, emoji: "♑" },
+        { id: "aquarius", name: "물병자리", color: 0x458cd2, emoji: "♒" },
+        { id: "pisces", name: "물고기자리", color: 0x96c790, emoji: "♓" },
+        { id: "aries", name: "양자리", color: 0xdb212c, emoji: "♈" },
+        { id: "taurus", name: "황소자리", color: 0x568e4f, emoji: "♉" },
+        { id: "gemini", name: "쌍둥이자리", color: 0xe8cb03, emoji: "♊" },
+        { id: "canaer", name: "게자리", color: 0xb5b5b5, emoji: "♋" },
+        { id: "leo", name: "사자자리", color: 0xef7006, emoji: "♌" },
+        { id: "virgo", name: "처녀자리", color: 0x9d5d28, emoji: "♍" },
+        { id: "libra", name: "천칭자리", color: 0xed6da0, emoji: "♎" },
+        { id: "scorpio", name: "전갈자리", color: 0x000000, emoji: "♏" },
+        { id: "sagittarius", name: "궁수자리", color: 0x884aad, emoji: "♐" },
+    ];
+
+export { status, birthstones };
 
 /**
  * 채널에 로그를 전송합니다.
@@ -125,7 +164,7 @@ export async function sendLogMessage(guildId: Snowflake, type: string, userId: S
  * @param {Snowflake} channel 메시지를 전송할 채널
  */
 export async function sendRegisterHelper(channel: TextChannel, allowHideAge: boolean) {
-    const contents: MessageOptions = {
+    const contents: MessageCreateOptions = {
         embeds: [
             {
                 color: Colors.primary,
@@ -288,26 +327,8 @@ export async function createBirthdayRole(guild: Guild): Promise<Role> {
 /**
  * 날짜의 탄생석을 반환합니다.
  * @param {date} date 탄생석을 반환할 Date객체
- * @returns {{ name: string; color: HexColorString }}
  */
-export function getBirthstone(date: Date): { name: string; color: number } {
-    const birthstones: {
-        name: string;
-        color: number;
-    }[] = [
-        { name: "석류석", color: 0x952929 },
-        { name: "자수정", color: 0x9463c6 },
-        { name: "아쿠아마린", color: 0x7bf7cd },
-        { name: "다이아몬드", color: 0xd2e4ec },
-        { name: "에메랄드", color: 0x4dc274 },
-        { name: "진주", color: 0xdbd8cb },
-        { name: "루비", color: 0xd9105c },
-        { name: "페리도트", color: 0xaebe23 },
-        { name: "사파이어", color: 0x0f4fb4 },
-        { name: "오팔", color: 0xa3bdb6 },
-        { name: "토파즈", color: 0xf7c278 },
-        { name: "탄자나이트", color: 0x39497b },
-    ];
+export function getBirthstone(date: Date) {
     const monthIndx: number = date.getMonth();
     return birthstones[monthIndx];
 }
@@ -318,18 +339,14 @@ export function getBirthstone(date: Date): { name: string; color: number } {
 /**
  * 날짜의 별자리를 반환합니다. https://github.com/tindoductran/zodiac/blob/master/getZodiac2.html
  * @param {date} date 별자리를 반환할 Date객체
- * @returns {{ name: string; color: HexColorString }}
  */
-export function getZodiac(date: Date): { name: string; color: number; emoji: string } {
+export function getZodiac(date: Date) {
     let signMonthIndex;
     //bound is zero indexed and returns the day of month where the boundary occurs
     //ie. bound[0] = 20; means January 20th is the boundary for a zodiac sign
     const bound = [20, 19, 20, 20, 20, 21, 22, 22, 21, 22, 21, 21];
     //startMonth is zero indexed and returns the zodiac sign of the start of that month
     //ie. startMonth[0] = "Capricorn"; means start of January is Zodiac Sign "Capricorn"
-    const startMonth = ["염소자리", "물병자리", "물고기자리", "양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "궁수자리"];
-    const colors: number[] = [0x707070, 0x458cd2, 0x96c790, 0xdb212c, 0x568e4f, 0xe8cb03, 0xb5b5b5, 0xef7006, 0x9d5d28, 0xed6da0, 0x000000, 0x884aad];
-    const emojis = ["♑", "♒", "♓", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐"];
     const monthIndex: number = date.getMonth(); //so we can use zero indexed arrays
     if (Number(("0" + date.getDate()).slice(-2)) <= bound[monthIndex]) {
         //it's start of month -- before or equal to bound date
@@ -338,9 +355,6 @@ export function getZodiac(date: Date): { name: string; color: number; emoji: str
         //it must be later than bound, we use the next month's startMonth
         signMonthIndex = (monthIndex + 1) % 12; //mod 12 to loop around to January index.
     }
-    return {
-        name: startMonth[signMonthIndex], //return the Zodiac sign of start Of that month.
-        color: colors[signMonthIndex],
-        emoji: emojis[signMonthIndex],
-    };
+    const zodiac = zodiacs[signMonthIndex];
+    return zodiac;
 }
