@@ -1,4 +1,4 @@
-import { APIEmbed, ChannelType, Guild, MessageOptions, Role, Snowflake, TextChannel } from "discord.js";
+import { APIEmbed, ChannelType, Guild, MessageCreateOptions, Role, Snowflake, TextChannel } from "discord.js";
 import Settings from "../models/guild-settings";
 import Birthdays from "../models/birthdays";
 import client from "../bot";
@@ -125,7 +125,7 @@ export async function sendLogMessage(guildId: Snowflake, type: string, userId: S
  * @param {Snowflake} channel 메시지를 전송할 채널
  */
 export async function sendRegisterHelper(channel: TextChannel, allowHideAge: boolean) {
-    const contents: MessageOptions = {
+    const contents: MessageCreateOptions = {
         embeds: [
             {
                 color: Colors.primary,
