@@ -371,6 +371,11 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     },
                     { upsert: true }
                 );
+                if (guildSetting.subRole && prevBirthday.roles.length > 0) {
+                    prevBirthday.roles.forEach(async (roleId) => {
+                        await member.roles.remove(roleId);
+                    });
+                }
                 const decModifiedCount = client.agenda.create("dec modifiedCount", { userId: member.user.id });
                 decModifiedCount.schedule("1 month after");
                 await decModifiedCount.save();
