@@ -194,6 +194,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                                 });
                                 await member.roles.add(role);
                             } else {
+                                roles.push(zodiacRole.id);
                                 await member.roles.add(zodiacRole);
                             }
 
@@ -212,6 +213,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                                 });
                                 await member.roles.add(role);
                             } else {
+                                roles.push(birthstoneRole.id);
                                 await member.roles.add(birthstoneRole);
                             }
 
@@ -360,12 +362,55 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                 if (!prevBirthday) return;
                 const prevBirthdayDate = prevBirthday.date;
 
-                await prevBirthday?.updateOne(
+                await prevBirthday.updateOne({ roles: [] });
+                const roles = [];
+                if (guildSetting.subRole) {
+                    const zodiac = getZodiac(birthday);
+                    const zodiacRoleId = guildSetting.zodiacRoles.find(obj => obj._id === zodiac.id)?.roleId;
+                    const zodiacRole = zodiacRoleId ? await interaction.guild.roles.fetch(zodiacRoleId) : undefined;
+                    if (!zodiacRole) {
+                        const role = await interaction.guild.roles.create({
+                            name: `${zodiac.emoji} ${zodiac.name}`,
+                            color: zodiac.color,
+                            hoist: false,
+                        });
+                        roles.push(role.id);
+                        await Settings.findByIdAndUpdate(interaction.guildId, {
+                            $addToSet: { zodiacRoles: { _id: zodiac.id, roleId: role.id } },
+                        });
+                        await member.roles.add(role);
+                    } else {
+                        roles.push(zodiacRole.id);
+                        await member.roles.add(zodiacRole);
+                    }
+
+                    const birthStone = getBirthstone(birthday);
+                    const birthstoneRoleId = guildSetting.birthstoneRoles.find(obj => obj._id === birthStone.id)?.roleId;
+                    const birthstoneRole = birthstoneRoleId ? await interaction.guild.roles.fetch(birthstoneRoleId) : undefined;
+                    if (!birthstoneRole) {
+                        const role = await interaction.guild.roles.create({
+                            name: birthStone.name,
+                            color: birthStone.color,
+                            hoist: false,
+                        });
+                        roles.push(role.id);
+                        await Settings.findByIdAndUpdate(interaction.guildId, {
+                            $addToSet: { birthstoneRoles: { _id: birthStone.id, roleId: role.id } },
+                        });
+                        await member.roles.add(role);
+                    } else {
+                        roles.push(birthstoneRole.id);
+                        await member.roles.add(birthstoneRole);
+                    }
+
+                }
+                await prevBirthday.updateOne(
                     {
                         _id: member.user.id,
                         lastModifiedAt: new Date(),
                         $inc: { modifiedCount: 1 },
                         date: birthday,
+                        roles,
                         month: ("0" + (birthday.getMonth() + 1)).slice(-2),
                         day: ("0" + birthday.getDate()).slice(-2),
                     },
@@ -439,6 +484,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     });
                     await member.roles.add(role);
                 } else {
+                    roles.push(zodiacRole.id);
                     await member.roles.add(zodiacRole);
                 }
 
@@ -457,6 +503,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
                     });
                     await member.roles.add(role);
                 } else {
+                    roles.push(birthstoneRole.id);
                     await member.roles.add(birthstoneRole);
                 }
 

@@ -466,6 +466,7 @@ module.exports = {
                             });
                             await interaction.member.roles.add(role);
                         } else {
+                            roles.push(zodiacRole.id);
                             await interaction.member.roles.add(zodiacRole);
                         }
 
@@ -484,6 +485,7 @@ module.exports = {
                             });
                             await interaction.member.roles.add(role);
                         } else {
+                            roles.push(birthstoneRole.id);
                             await interaction.member.roles.add(birthstoneRole);
                         }
 
