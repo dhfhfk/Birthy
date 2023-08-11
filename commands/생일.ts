@@ -438,8 +438,16 @@ module.exports = {
                         ],
                     });
                 }
+                try {
+                    userData.roles.forEach(async (role) => {
+                        await interaction.member.roles.remove(role);
+                    });
+                } catch (e) {
+                    //
+                }
                 await Birthdays.findByIdAndUpdate(interaction.user.id, {
                     _id: interaction.user.id,
+                    roles: [],
                     $pull: { guilds: { _id: interaction.guildId } },
                 });
                 await Settings.findByIdAndUpdate(interaction.guildId, {
