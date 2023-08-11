@@ -130,7 +130,7 @@ module.exports = {
             ],
         },
         {
-            name: "역할",
+            name: "추가역할",
             description: "[관리자]",
             type: ApplicationCommandOptionType.SubcommandGroup,
             options: [
@@ -140,15 +140,15 @@ module.exports = {
                 //     type: ApplicationCommandOptionType.Subcommand,
                 // },
                 {
-                    name: "비활성화",
-                    description: "[관리자] 탄생석, 별자리 역할을 더이상 추가하지 않도록 설정해요.",
-                    type: ApplicationCommandOptionType.Subcommand,
-                },
-                {
                     name: "활성화",
                     description: "[관리자] 탄생석, 별자리 역할을 활성화해요.",
                     type: ApplicationCommandOptionType.Subcommand,
                 },
+                {
+                    name: "비활성화",
+                    description: "[관리자] 탄생석, 별자리 역할을 더이상 추가하지 않도록 설정해요.",
+                    type: ApplicationCommandOptionType.Subcommand,
+                }
             ],
         },
         {
@@ -602,7 +602,7 @@ module.exports = {
                     }
                     return;
                 }
-                case "역할": {
+                case "추가역할": {
                     await interaction.deferReply({ ephemeral: true });
                     switch (interaction.options.getSubcommand()) {
                         // 역할 확인

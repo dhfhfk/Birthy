@@ -57,6 +57,18 @@ module.exports = {
                 },
             ],
         },
+        {
+            name: "추가역할",
+            description: "추가 역할 관리",
+            type: ApplicationCommandOptionType.SubcommandGroup,
+            options: [
+                {
+                    name: "활성화",
+                    description: "탄생석, 별자리 역할을 받아요.",
+                    type: ApplicationCommandOptionType.Subcommand,
+                },
+            ],
+        },
     ],
 
     run: async (client: Client, interaction: ChatInputCommandInteraction, locale: string) => {
@@ -94,41 +106,138 @@ module.exports = {
             });
         }
 
-        switch (interaction.options.getSubcommand()) {
-            case "알림설정": {
-                if (!userData || !userData.date) {
-                    return await interaction.reply({
-                        ephemeral: true,
-                        embeds: [
-                            {
-                                color: Colors.error,
-                                author: {
-                                    name: interaction.member.nickname || interaction.user.username,
-                                    icon_url: interaction.user.displayAvatarURL(),
+        if (interaction.options.getSubcommandGroup(false)) {
+            switch (interaction.options.getSubcommandGroup()) {
+                case "추가역할": {
+                    if (!userData || !userData.date) {
+                        return await interaction.reply({
+                            ephemeral: true,
+                            embeds: [
+                                {
+                                    color: Colors.error,
+                                    author: {
+                                        name: interaction.member.nickname || interaction.user.username,
+                                        icon_url: interaction.user.displayAvatarURL(),
+                                    },
+                                    title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
+                                    description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
+                                    footer: { text: `${interaction.user.id}` },
                                 },
-                                title: "<:xbold:985419129316065320> 등록된 생일 정보가 없어요!",
-                                description: "`/생일 등록` 명령어를 이용해 생일을 등록해주세요.",
-                                footer: { text: `${interaction.user.id}` },
-                            },
-                        ],
-                    });
+                            ],
+                        });
+                    }
+                    switch (interaction.options.getSubcommand()) {
+                        case "활성화": {
+                            await interaction.deferReply({ ephemeral: true });
+                            if (!guildSetting.subRole) {
+                                await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: Colors.error,
+                                            title: "<:xbold:985419129316065320> 이 서버는 추가역할(별자리, 탄생석)이 비활성화되어있어요!",
+                                            description: "관리자에게 `/생일알림 추가역할 활성화` 명령어를 요청해보세요.",
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                                return;
+                            }
+                            if (userData.roles.length > 0) {
+                                await interaction.editReply({
+                                    embeds: [
+                                        {
+                                            color: Colors.error,
+                                            title: "<:xbold:985419129316065320> 이미 추가역할(별자리, 탄생석)이 추가된 것으로 보여요!",
+                                            description: "자신에게 추가역할이 있는지 확인해주세요. 만약 뭔가 이상하다면 `/생일 삭제` 명령어로 생일을 삭제하고 다시 등록해보세요.",
+                                            footer: { text: interaction.guild.id },
+                                        },
+                                    ],
+                                });
+                                return;
+                            }
+                            const roles = [];
+                            const zodiac = getZodiac(userData.date);
+                            const zodiacRoleId = guildSetting.zodiacRoles.find(obj => obj._id === zodiac.id)?.roleId;
+                            let zodiacRole = zodiacRoleId ? await interaction.guild.roles.fetch(zodiacRoleId) : undefined;
+                            if (!zodiacRole) {
+                                zodiacRole = await interaction.guild.roles.create({
+                                    name: `${zodiac.emoji} ${zodiac.name}`,
+                                    color: zodiac.color,
+                                    hoist: false,
+                                });
+                                roles.push(zodiacRole.id);
+                                await Settings.findByIdAndUpdate(interaction.guildId, {
+                                    $addToSet: { zodiacRoles: { _id: zodiac.id, roleId: zodiacRole.id } },
+                                });
+                                await interaction.member.roles.add(zodiacRole);
+                            } else {
+                                roles.push(zodiacRole.id);
+                                await interaction.member.roles.add(zodiacRole);
+                            }
+
+                            const birthStone = getBirthstone(userData.date);
+                            const birthstoneRoleId = guildSetting.birthstoneRoles.find(obj => obj._id === birthStone.id)?.roleId;
+                            let birthstoneRole = birthstoneRoleId ? await interaction.guild.roles.fetch(birthstoneRoleId) : undefined;
+                            if (!birthstoneRole) {
+                                birthstoneRole = await interaction.guild.roles.create({
+                                    name: birthStone.name,
+                                    color: birthStone.color,
+                                    hoist: false,
+                                });
+                                roles.push(birthstoneRole.id);
+                                await Settings.findByIdAndUpdate(interaction.guildId, {
+                                    $addToSet: { birthstoneRoles: { _id: birthStone.id, roleId: birthstoneRole.id } },
+                                });
+                                await interaction.member.roles.add(birthstoneRole);
+                            } else {
+                                roles.push(birthstoneRole.id);
+                                await interaction.member.roles.add(birthstoneRole);
+                            }
+                            await interaction.editReply({
+                                embeds: [
+                                    {
+                                        color: Colors.error,
+                                        title: "<:cakeprogress:985470905314603018> 추가역할을 추가해 드렸어요",
+                                        description: "추가역할은 따로 비활성화할 수 없어요.",
+                                        fields: [
+                                            {
+                                                name: "별자리 역할",
+                                                value: `<@&${zodiacRole.id}>`
+                                            },
+                                            {
+                                                name: "탄생석 역할",
+                                                value: `<@&${birthstoneRole.id}>`
+                                            },
+                                        ],
+                                        footer: { text: interaction.guild.id },
+                                    },
+                                ],
+                            });
+                            return;
+                        }
+                    }
+                    return;
                 }
-                await userData.updateOne({ allowCreateNotifi: !userData.allowCreateNotifi });
-                await interaction.reply({
-                    embeds: [
-                        {
-                            color: Colors.primary,
-                            author: {
-                                name: interaction.member.nickname || interaction.user.username,
-                                icon_url: interaction.user.displayAvatarURL(),
-                            },
-                            title: `<:cakeprogress:985470905314603018> 나이가 ${JSON.parse(interaction.options.getString("나이공개", true)) ? "공개" : "비공개"}된 생일을 공유하도록 설정했어요`,
-                            footer: { text: `${interaction.user.id}` },
-                        },
-                    ],
-                });
-                return;
             }
+        }
+        switch (interaction.options.getSubcommand()) {
+            // case "알림설정": {
+            //     await userData.updateOne({ allowCreateNotifi: !userData.allowCreateNotifi });
+            //     await interaction.reply({
+            //         embeds: [
+            //             {
+            //                 color: Colors.primary,
+            //                 author: {
+            //                     name: interaction.member.nickname || interaction.user.username,
+            //                     icon_url: interaction.user.displayAvatarURL(),
+            //                 },
+            //                 title: `<:cakeprogress:985470905314603018> 나이가 ${JSON.parse(interaction.options.getString("나이공개", true)) ? "공개" : "비공개"}된 생일을 공유하도록 설정했어요`,
+            //                 footer: { text: `${interaction.user.id}` },
+            //             },
+            //         ],
+            //     });
+            //     return;
+            // }
             case "변경": {
                 if (!userData || !userData.date) {
                     return await interaction.reply({
@@ -178,8 +287,7 @@ module.exports = {
                                 {
                                     type: 4,
                                     customId: "birthday",
-                                    label: `${
-                                        today.getFullYear() +
+                                    label: `${today.getFullYear() +
                                         (today.getMonth() + 1 > 9 ? (today.getMonth() + 1).toString() : "0" + (today.getMonth() + 1)) +
                                         (today.getDate() > 9 ? today.getDate().toString() : "0" + today.getDate().toString())
                                     } 형식으로 입력해주세요.`,
@@ -533,8 +641,7 @@ module.exports = {
                                 {
                                     type: 4,
                                     customId: "birthday",
-                                    label: `${
-                                        today.getFullYear() +
+                                    label: `${today.getFullYear() +
                                         (today.getMonth() + 1 > 9 ? (today.getMonth() + 1).toString() : "0" + (today.getMonth() + 1)) +
                                         (today.getDate() > 9 ? today.getDate().toString() : "0" + today.getDate().toString())
                                     } 형식으로 입력해주세요.`,
