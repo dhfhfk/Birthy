@@ -141,7 +141,7 @@ module.exports = {
                 // },
                 {
                     name: "비활성화",
-                    description: "[관리자] Birth가 등록했던 탄생석, 별자리 역할을 모두 삭제하고 비활성화해요.",
+                    description: "[관리자] 탄생석, 별자리 역할을 더이상 추가하지 않도록 설정해요.",
                     type: ApplicationCommandOptionType.Subcommand,
                 },
                 {
@@ -535,7 +535,7 @@ module.exports = {
                                     {
                                         color: Colors.primary,
                                         title: "<:cakeprogress:985470905314603018> 생일 역할을 지정했어요",
-                                        description: "이제 생일이 되면 멤버에게 특별한 역할을 부여하고 알아서 빼드릴게요.",
+                                        description: "이제 생일이 되면 멤버에게 특별한 역할을 추가하고 알아서 빼드릴게요.",
                                         fields: [
                                             {
                                                 name: "생일 역할",
@@ -723,7 +723,7 @@ module.exports = {
                                 });
                             }
                             if (guildSetting) {
-                                // 리팩토링 예정
+                                // API 제한 이슈로 삭제는 유저에게 요청
                                 // try {
                                 //     guildSetting.zodiacRoles.forEach(async (r) => {
                                 //         await interaction.guild.roles.delete(r._id, `${interaction.user.username} 유저 요청으로 삭제`);
@@ -748,8 +748,8 @@ module.exports = {
                                     embeds: [
                                         {
                                             color: Colors.primary,
-                                            title: "<:cakeprogress:985470905314603018> 모든 역할을 삭제했어요.",
-                                            description: "이제 탄생석, 별자리 역할 기능을 사용하지 않을 거예요.",
+                                            title: "<:cakeprogress:985470905314603018> 이제부터 역할을 추가하지 않아요",
+                                            description: "남아있는 탄생석, 별자리 역할은 직접 삭제해주세요.",
                                             footer: { text: interaction.guild.id },
                                         },
                                     ],
@@ -807,8 +807,8 @@ module.exports = {
                                 embeds: [
                                     {
                                         color: Colors.primary,
-                                        title: "<:cakeprogress:985470905314603018> 별자리, 탄생석 기능을 활성화했어요.",
-                                        description: "멤버의 선택에 따라 역할을 부여할게요.",
+                                        title: "<:cakeprogress:985470905314603018> 별자리, 탄생석 기능을 활성화했어요",
+                                        description: "이제 멤버가 생일을 등록하면 역할을 추가할게요.",
                                         footer: { text: interaction.guild.id },
                                     },
                                 ],
