@@ -170,7 +170,7 @@ module.exports = {
                 const today = new Date();
                 await interaction.showModal({
                     title: "생일 변경",
-                    customId: "birthday-change-change",
+                    customId: `birthday-change-${interaction.user.id}`,
                     components: [
                         {
                             type: 1,
@@ -523,7 +523,7 @@ module.exports = {
                 const today = new Date();
                 await interaction.showModal({
                     title: "생일 등록",
-                    customId: `birthday-${guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true}`,
+                    customId: `birthday-${guildSetting.allowHideAge ? JSON.parse(interaction.options.getString("나이공개", true)) : true}-${interaction.user.id}`,
                     components: [
                         {
                             type: 1,
