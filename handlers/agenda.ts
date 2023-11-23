@@ -14,14 +14,14 @@ module.exports = async (client: Client) => {
         const birthdays = await Birthdays.find({ month: ("0" + (today.getMonth() + 1)).slice(-2), day: ("0" + today.getDate()).slice(-2) });
         console.log(`[오늘 생일] ${birthdays.length} 유저`);
         try {
-            birthdays.forEach((user) => {
-                user.guilds.forEach(async (userGuild) => {
-                    await sendBirthMessage(user._id);
+            birthdays.forEach(async (user) => {
+                // user.guilds.forEach(async (userGuild) => {
+                await sendBirthMessage(user._id);
 
-                    const finishBirthday = agenda.create("cleaning birthday", { userId: user._id });
-                    finishBirthday.schedule("1 day after");
-                    await finishBirthday.save();
-                });
+                const finishBirthday = agenda.create("cleaning birthday", { userId: user._id });
+                finishBirthday.schedule("1 day after");
+                await finishBirthday.save();
+                // });
             });
         } catch (e) {
             console.warn(e);
